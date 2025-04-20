@@ -299,8 +299,10 @@ pl_none   plsm_use( plsm_t plsm, pl_t node, pl_size_t size );
 pl_none   plsm_empty( plsm_t plsm, pl_size_t size );
 pl_none   plsm_del( plsm_t plsm );
 pl_t      plsm_get( plsm_t plsm, pl_size_t size );
-char*     plsm_strdup( plsm_t plsm, char* str );
-char* plsm_format( plsm_t plsm, const char* fmt, ... );
+char*     plsm_strdup( plsm_t plsm, const char* str );
+char*     plsm_format( plsm_t plsm, const char* fmt, ... );
+pl_size_t plsm_used( plsm_t plsm );
+pl_size_t plsm_size( plsm_t plsm );
 pl_bool_t plsm_is_empty( plsm_t plsm );
 
 pl_none   plcm_new( plcm_t plcm, pl_size_t size );
@@ -318,6 +320,7 @@ pl_none   plcm_reset( plcm_t plcm );
 pl_size_t plcm_used( plcm_t plcm );
 pl_size_t plcm_size( plcm_t plcm );
 pl_t      plcm_data( plcm_t plcm );
+pl_bool_t plcm_heap( plcm_t plcm );
 pl_t      plcm_end( plcm_t plcm );
 pl_bool_t plcm_is_empty( plcm_t plcm );
 
@@ -333,9 +336,11 @@ pl_size_t      plss_length( plcm_t plcm );
 const pl_str_t plss_string( plcm_t plcm );
 plsr_s         plss_ref( plcm_t plcm );
 
-plsr_s    plsr_from_c( const char* c_string );
-plsr_s    plsr_from_c_length( const char* c_string, pl_size_t length );
-plsr_s    plsr_duplicate( plsr_s plsr );
+plsr_s      plsr_from_c( const char* c_string );
+plsr_s      plsr_from_c_length( const char* c_string, pl_size_t length );
+const char* plsr_string( plsr_s sr );
+pl_size_t   plsr_length( plsr_s sr );
+// plsr_s    plsr_duplicate( plsr_s plsr );
 pl_bool_t plsr_compare( plsr_s p1, plsr_s p2 );
 pl_bool_t plsr_compare_n( plsr_s p1, plsr_s p2, pl_size_t n );
 plsr_s    plsr_invalid( pl_none );

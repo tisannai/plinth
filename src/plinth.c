@@ -22,17 +22,17 @@
 
 pl_t pl_alloc_memory( pl_size_t size )
 {
-    return calloc( 1, (size_t) size );
+    return calloc( 1, (size_t)size );
 }
 
 pl_none pl_free_memory( pl_t mem )
 {
-    free( (void*) mem );
+    free( (void*)mem );
 }
 
 pl_t pl_realloc_memory( pl_t mem, pl_size_t size )
 {
-    return realloc( (void*) mem, (size_t) size );
+    return realloc( (void*)mem, (size_t)size );
 }
 
 char* pl_strdup( const char* str )
@@ -51,7 +51,7 @@ char* pl_format( const char* fmt, ... )
     va_start( ap, fmt );
 
     pl_pos_t size;
-    va_list coap;
+    va_list  coap;
 
     /* Copy ap to coap for second va-call. */
     va_copy( coap, ap );
@@ -59,14 +59,16 @@ char* pl_format( const char* fmt, ... )
     va_end( coap );
 
     if ( size < 0 ) {
+        // GCOV_EXCL_START
         va_end( ap );
-        return NULL; // GCOV_EXCL_LINE
+        return NULL;
+        // GCOV_EXCL_STOP
     }
 
     char* mem;
 
-    mem = pl_alloc_memory( size+1 );
-    vsnprintf( mem, size+1, fmt, ap );
+    mem = pl_alloc_memory( size + 1 );
+    vsnprintf( mem, size + 1, fmt, ap );
     va_end( ap );
 
     return mem;
@@ -89,11 +91,16 @@ static pl_none plsm_node_init( plsm_node_t node, pl_bool_t heap )
 
 pl_none plsm_new( plsm_t plsm, pl_size_t size )
 {
-    plsm->node = pl_alloc_memory( size );
-    if ( plsm->node ) {
-        plsm_node_init( plsm->node, pl_true );
-        plsm->size = size;
+    if ( size > sizeof( plsm_s ) ) {
+        plsm->node = pl_alloc_memory( size );
+        if ( plsm->node ) {
+            plsm_node_init( plsm->node, pl_true );
+            plsm->size = size;
+        } else {
+            plsm->size = 0; // GCOV_EXCL_LINE
+        }
     } else {
+        plsm->node = NULL;
         plsm->size = 0;
     }
 }
@@ -102,6 +109,7 @@ pl_none plsm_new( plsm_t plsm, pl_size_t size )
 pl_none plsm_use( plsm_t plsm, pl_t node, pl_size_t size )
 {
     plsm->node = node;
+    plsm->size = size;
     plsm_node_init( node, pl_false );
 }
 
@@ -118,7 +126,7 @@ pl_none plsm_del( plsm_t plsm )
     plsm_node_t left;
     plsm_node_t right;
     plsm_node_t cur;
-    
+
     if ( plsm->node ) {
 
         left = plsm->node->prev;
@@ -139,8 +147,10 @@ pl_none plsm_del( plsm_t plsm )
                 pl_free_memory( cur );
             }
         }
-
     }
+
+    plsm->node = NULL;
+    plsm->size = 0;
 }
 
 
@@ -175,10 +185,10 @@ pl_t plsm_get( plsm_t plsm, pl_size_t size )
 }
 
 
-char* plsm_strdup( plsm_t plsm, char* str )
+char* plsm_strdup( plsm_t plsm, const char* str )
 {
     if ( str ) {
-        char* dup;
+        char*     dup;
         pl_size_t length;
         length = strlen( str ) + 1;
         dup = plsm_get( plsm, length );
@@ -197,7 +207,7 @@ char* plsm_format( plsm_t plsm, const char* fmt, ... )
     va_start( ap, fmt );
 
     pl_pos_t size;
-    va_list coap;
+    va_list  coap;
 
     /* Copy ap to coap for second va-call. */
     va_copy( coap, ap );
@@ -205,17 +215,35 @@ char* plsm_format( plsm_t plsm, const char* fmt, ... )
     va_end( coap );
 
     if ( size < 0 ) {
+        // GCOV_EXCL_START
         va_end( ap );
-        return NULL; // GCOV_EXCL_LINE
+        return NULL;
+        // GCOV_EXCL_STOP
     }
 
     char* mem;
 
     mem = plsm_get( plsm, size + 1 );
-    vsnprintf( mem, size+1, fmt, ap );
+    vsnprintf( mem, size + 1, fmt, ap );
     va_end( ap );
 
     return mem;
+}
+
+
+pl_size_t plsm_used( plsm_t plsm )
+{
+    if ( plsm->node ) {
+        return plsm->node->used;
+    } else {
+        return 0;
+    }
+}
+
+
+pl_size_t plsm_size( plsm_t plsm )
+{
+    return plsm->size;
 }
 
 
@@ -230,6 +258,14 @@ pl_bool_t plsm_is_empty( plsm_t plsm )
  * Continuous Memory Allocator:
  */
 
+static pl_none plcm_init( plcm_t plcm )
+{
+    plcm->size = 0;
+    plcm->used = 0;
+    plcm->data = NULL;
+    plcm->heap = pl_false;
+}
+
 pl_none plcm_new( plcm_t plcm, pl_size_t size )
 {
     pl_t mem;
@@ -241,10 +277,9 @@ pl_none plcm_new( plcm_t plcm, pl_size_t size )
         plcm->data = mem;
         plcm->heap = pl_true;
     } else {
-        plcm->size = 0;
-        plcm->used = 0;
-        plcm->data = NULL;
-        plcm->heap = pl_false;
+        // GCOV_EXCL_START
+        plcm_init( plcm );
+        // GCOV_EXCL_STOP
     }
 }
 
@@ -266,10 +301,8 @@ pl_none plcm_use_plsm( plcm_t plcm, plsm_t plsm, pl_size_t size )
 
 pl_none plcm_empty( plcm_t plcm, pl_size_t first_size )
 {
-    plcm->size = 0;
-    plcm->used = first_size;
-    plcm->data = NULL;
-    plcm->heap = pl_false;
+    plcm_init( plcm );
+    plcm->size = first_size;
 }
 
 
@@ -278,16 +311,31 @@ pl_none plcm_del( plcm_t plcm )
     if ( plcm->heap && !plcm_is_empty( plcm ) ) {
         pl_free_memory( plcm->data );
     }
+    plcm_init( plcm );
 }
 
 
 pl_none plcm_resize( plcm_t plcm, pl_size_t size )
 {
-    if ( size > plcm->size ) {
+    if ( size > plcm->size || plcm_is_empty( plcm ) ) {
 
         pl_size_t new_size;
 
-        if ( !plcm->heap ) {
+        if ( plcm_is_empty( plcm ) ) {
+
+            /* Empty plcm. */
+            if ( plcm->size == 0 || size > plcm->size ) {
+                new_size = PLINTH_ALIGN_TO( size, 64 );
+            } else {
+                new_size = plcm->size;
+            }
+
+            plcm->data = pl_alloc_memory( new_size );
+            plcm->size = new_size;
+            plcm->used = 0;
+            plcm->heap = pl_true;
+
+        } else if ( !plcm->heap ) {
 
             pl_t new_mem;
 
@@ -301,20 +349,6 @@ pl_none plcm_resize( plcm_t plcm, pl_size_t size )
             memcpy( new_mem, plcm->data, plcm->size );
             plcm->data = new_mem;
             plcm->size = new_size;
-            plcm->heap = pl_true;
-
-        } else if ( plcm_is_empty( plcm ) ) {
-
-            /* Empty plcm. */
-            if ( plcm->used == 0 || size > plcm->used ) {
-                new_size = PLINTH_ALIGN_TO( size, 64 );
-            } else {
-                new_size = plcm->used;
-            }
-
-            plcm->data = pl_alloc_memory( new_size );
-            plcm->size = new_size;
-            plcm->used = 0;
             plcm->heap = pl_true;
 
         } else {
@@ -333,7 +367,6 @@ pl_none plcm_resize( plcm_t plcm, pl_size_t size )
             plcm->data = pl_realloc_memory( plcm->data, new_size );
             memset( plcm->data + plcm->size, 0, ( size - plcm->size ) );
             plcm->size = new_size;
-
         }
     }
 }
@@ -404,6 +437,12 @@ pl_t plcm_data( plcm_t plcm )
 }
 
 
+pl_bool_t plcm_heap( plcm_t plcm )
+{
+    return plcm->heap;
+}
+
+
 pl_t plcm_end( plcm_t plcm )
 {
     return plcm->data + plcm->used;
@@ -412,7 +451,7 @@ pl_t plcm_end( plcm_t plcm )
 
 pl_bool_t plcm_is_empty( plcm_t plcm )
 {
-    return ( plcm->data == NULL && plcm->size == 0 );
+    return ( plcm->data == NULL );
 }
 
 
@@ -423,7 +462,7 @@ pl_bool_t plcm_is_empty( plcm_t plcm )
 
 static pl_none plss_terminate( plcm_t plcm )
 {
-    *((char*)(plcm->data + plcm->used)) = 0;
+    *( (char*)( plcm->data + plcm->used ) ) = 0;
 }
 
 
@@ -458,31 +497,21 @@ plcm_t plss_append( plcm_t plcm, plsr_s str )
 
 plcm_t plss_append_c( plcm_t plcm, char* str )
 {
-    pl_size_t length;
-    length = strlen( str );
-    plcm_resize( plcm, plcm->used + length + 1 );
-    memcpy( plcm->data + plcm->used, str, length );
-    plcm->used += length;
-    plss_terminate( plcm );
-    return plcm;
+    return plss_append( plcm, plsr_from_c( str ) );
 }
 
 plcm_t plss_append_ch( plcm_t plcm, char ch )
 {
-    char* ref;
-    
-    plcm_resize( plcm, plcm->used + 2 );
-    ref = plcm->data + plcm->used;
-    ref[ 0 ] = ch;
-    ref[ 1 ] = 0;
-    plcm->used += 1;
-    return plcm;
+    char ch_null[ 2 ];
+    ch_null[ 0 ] = ch;
+    ch_null[ 1 ] = 0;
+    return plss_append( plcm, plsr_from_c_length( ch_null, 1 ) );
 }
 
 
 plcm_t plss_set( plcm_t plcm, plsr_s str )
 {
-    plcm_resize( plcm, str.length+1 );
+    plcm_resize( plcm, str.length + 1 );
     memcpy( plcm->data, str.string, str.length );
     plcm->used = str.length;
     plss_terminate( plcm );
@@ -530,7 +559,7 @@ pl_none plss_va_format( plcm_t plcm, const char* fmt, va_list ap )
     }
 
     plcm_resize( plcm, plcm->used + size + 1 );
-    size = vsnprintf( plcm->data + plcm->used, size+1, fmt, coap );
+    size = vsnprintf( plcm->data + plcm->used, size + 1, fmt, coap );
     va_end( coap );
 
     plcm->used += size;
@@ -545,15 +574,14 @@ pl_size_t plss_length( plcm_t plcm )
 
 const pl_str_t plss_string( plcm_t plcm )
 {
-    return (const pl_str_t) plcm_ref( plcm, 0 );
+    return (const pl_str_t)plcm_ref( plcm, 0 );
 }
 
 
 plsr_s plss_ref( plcm_t plcm )
 {
     plsr_s ret;
-    //ret.str_m = (pl_str_t) plss_string( plcm );
-    ret.string = (pl_str_t) plss_string( plcm );
+    ret.string = (pl_str_t)plss_string( plcm );
     ret.length = plss_length( plcm );
     return ret;
 }
@@ -584,17 +612,29 @@ plsr_s plsr_from_c_length( const char* c_string, pl_size_t length )
 }
 
 
-plsr_s plsr_duplicate( plsr_s plsr )
+// plsr_s plsr_duplicate( plsr_s plsr )
+// {
+//     if ( plsr_is_invalid( plsr ) ) {
+//         return plsr;
+//     } else {
+//         plsr_s ret;
+//         ret.str_m = pl_alloc_memory( plsr.length + 1 );
+//         memcpy( ret.str_m, plsr.string, plsr.length + 1 );
+//         ret.length = plsr.length;
+//         return ret;
+//     }
+// }
+
+
+const char* plsr_string( plsr_s sr )
 {
-    if ( plsr_is_invalid( plsr ) ) {
-        return plsr;
-    } else {
-        plsr_s ret;
-        ret.str_m = pl_alloc_memory( plsr.length + 1 );
-        memcpy( ret.str_m, plsr.string, plsr.length + 1 );
-        ret.length = plsr.length;
-        return ret;
-    }
+    return sr.string;
+}
+
+
+pl_size_t plsr_length( plsr_s sr )
+{
+    return sr.length;
 }
 
 
