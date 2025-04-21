@@ -250,7 +250,7 @@ pl_struct_type( plsm_node ) pl_struct_body( plsm_node )
     plsm_node_t prev;      /**< Previous node. */
     plsm_node_t next;      /**< Next node. */
     pl_size_t   used;      /**< Used count for data. */
-    pl_bool_t   heap;      /**< Heap reservation. */
+    pl_bool_t   debt;      /**< Reservation debt? */
     char*       data[ 0 ]; /**< Data. */
 };
 pl_struct( plsm )
@@ -269,7 +269,7 @@ pl_struct( plcm )
     pl_size_t size; /**< Reservation size for data. */
     pl_size_t used; /**< Used count for data. */
     pl_t      data; /**< Pointer to data. */
-    pl_bool_t heap; /**< Heap reservation. */
+    pl_bool_t debt; /**< Reservation debt? */
 };
 
 
@@ -320,7 +320,7 @@ pl_none   plcm_reset( plcm_t plcm );
 pl_size_t plcm_used( plcm_t plcm );
 pl_size_t plcm_size( plcm_t plcm );
 pl_t      plcm_data( plcm_t plcm );
-pl_bool_t plcm_heap( plcm_t plcm );
+pl_bool_t plcm_debt( plcm_t plcm );
 pl_t      plcm_end( plcm_t plcm );
 pl_bool_t plcm_is_empty( plcm_t plcm );
 

@@ -80,12 +80,12 @@ char* pl_format( const char* fmt, ... )
  * Segmented Memory Allocator:
  */
 
-static pl_none plsm_node_init( plsm_node_t node, pl_bool_t heap )
+static pl_none plsm_node_init( plsm_node_t node, pl_bool_t debt )
 {
     node->prev = NULL;
     node->next = NULL;
     node->used = 0;
-    node->heap = heap;
+    node->debt = debt;
 }
 
 
@@ -135,7 +135,7 @@ pl_none plsm_del( plsm_t plsm )
         while ( right ) {
             cur = right;
             right = right->next;
-            if ( cur->heap ) {
+            if ( cur->debt ) {
                 pl_free_memory( cur );
             }
         }
@@ -143,7 +143,7 @@ pl_none plsm_del( plsm_t plsm )
         while ( left ) {
             cur = left;
             left = left->prev;
-            if ( cur->heap ) {
+            if ( cur->debt ) {
                 pl_free_memory( cur );
             }
         }
@@ -263,7 +263,7 @@ static pl_none plcm_init( plcm_t plcm )
     plcm->size = 0;
     plcm->used = 0;
     plcm->data = NULL;
-    plcm->heap = pl_false;
+    plcm->debt = pl_false;
 }
 
 pl_none plcm_new( plcm_t plcm, pl_size_t size )
@@ -275,7 +275,7 @@ pl_none plcm_new( plcm_t plcm, pl_size_t size )
         plcm->size = size;
         plcm->used = 0;
         plcm->data = mem;
-        plcm->heap = pl_true;
+        plcm->debt = pl_true;
     } else {
         // GCOV_EXCL_START
         plcm_init( plcm );
@@ -289,7 +289,7 @@ pl_none plcm_use( plcm_t plcm, pl_t mem, pl_size_t size )
     plcm->size = size;
     plcm->used = 0;
     plcm->data = mem;
-    plcm->heap = pl_false;
+    plcm->debt = pl_false;
 }
 
 
@@ -308,7 +308,7 @@ pl_none plcm_empty( plcm_t plcm, pl_size_t first_size )
 
 pl_none plcm_del( plcm_t plcm )
 {
-    if ( plcm->heap && !plcm_is_empty( plcm ) ) {
+    if ( plcm->debt && !plcm_is_empty( plcm ) ) {
         pl_free_memory( plcm->data );
     }
     plcm_init( plcm );
@@ -333,9 +333,9 @@ pl_none plcm_resize( plcm_t plcm, pl_size_t size )
             plcm->data = pl_alloc_memory( new_size );
             plcm->size = new_size;
             plcm->used = 0;
-            plcm->heap = pl_true;
+            plcm->debt = pl_true;
 
-        } else if ( !plcm->heap ) {
+        } else if ( !plcm->debt ) {
 
             pl_t new_mem;
 
@@ -349,7 +349,7 @@ pl_none plcm_resize( plcm_t plcm, pl_size_t size )
             memcpy( new_mem, plcm->data, plcm->size );
             plcm->data = new_mem;
             plcm->size = new_size;
-            plcm->heap = pl_true;
+            plcm->debt = pl_true;
 
         } else {
 
@@ -437,9 +437,9 @@ pl_t plcm_data( plcm_t plcm )
 }
 
 
-pl_bool_t plcm_heap( plcm_t plcm )
+pl_bool_t plcm_debt( plcm_t plcm )
 {
-    return plcm->heap;
+    return plcm->debt;
 }
 
 

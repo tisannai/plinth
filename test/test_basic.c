@@ -159,9 +159,9 @@ void test_plcm( void )
 
     plsm_use( &plsm, mem, 1024 );
     plcm_use_plsm( &plcm, &plsm, 4 );
-    TEST_ASSERT_EQUAL( 0, plcm_heap( &plcm ) );
+    TEST_ASSERT_EQUAL( 0, plcm_debt( &plcm ) );
     plss_reformat( &plcm, "%s", s1 );
-    TEST_ASSERT_EQUAL( 1, plcm_heap( &plcm ) );
+    TEST_ASSERT_EQUAL( 1, plcm_debt( &plcm ) );
     TEST_ASSERT_EQUAL( 10, plss_length( &plcm ) );
     plcm_reset( &plcm );
     s2 = plcm_get_ref( &plcm, 10 );
@@ -183,35 +183,35 @@ void test_plcm( void )
 
     plsm_use( &plsm, mem, 1024 );
     plcm_use_plsm( &plcm, &plsm, 4 );
-    TEST_ASSERT_EQUAL( 0, plcm_heap( &plcm ) );
+    TEST_ASSERT_EQUAL( 0, plcm_debt( &plcm ) );
     plss_reformat( &plcm, "%s", s1 );
 
     plsm_use( &plsm, mem, 1024 );
     plcm_use_plsm( &plcm, &plsm, 8 );
-    TEST_ASSERT_EQUAL( 0, plcm_heap( &plcm ) );
+    TEST_ASSERT_EQUAL( 0, plcm_debt( &plcm ) );
     plss_reformat( &plcm, "%s", s1 );
-    TEST_ASSERT_EQUAL( 1, plcm_heap( &plcm ) );
+    TEST_ASSERT_EQUAL( 1, plcm_debt( &plcm ) );
     TEST_ASSERT_EQUAL( 10, plss_length( &plcm ) );
     plcm_del( &plcm );
 
     plcm_empty( &plcm, 0 );
-    TEST_ASSERT_EQUAL( 0, plcm_heap( &plcm ) );
+    TEST_ASSERT_EQUAL( 0, plcm_debt( &plcm ) );
     plss_reformat( &plcm, "%s", s1 );
-    TEST_ASSERT_EQUAL( 1, plcm_heap( &plcm ) );
+    TEST_ASSERT_EQUAL( 1, plcm_debt( &plcm ) );
     TEST_ASSERT_EQUAL( 10, plss_length( &plcm ) );
     plcm_del( &plcm );
 
     plcm_empty( &plcm, 16 );
-    TEST_ASSERT_EQUAL( 0, plcm_heap( &plcm ) );
+    TEST_ASSERT_EQUAL( 0, plcm_debt( &plcm ) );
     plss_reformat( &plcm, "%s", s1 );
-    TEST_ASSERT_EQUAL( 1, plcm_heap( &plcm ) );
+    TEST_ASSERT_EQUAL( 1, plcm_debt( &plcm ) );
     TEST_ASSERT_EQUAL( 10, plss_length( &plcm ) );
     plcm_del( &plcm );
 
     plcm_empty( &plcm, 16 );
-    TEST_ASSERT_EQUAL( 0, plcm_heap( &plcm ) );
+    TEST_ASSERT_EQUAL( 0, plcm_debt( &plcm ) );
     plss_format( &plcm, "%s", s1 );
-    TEST_ASSERT_EQUAL( 1, plcm_heap( &plcm ) );
+    TEST_ASSERT_EQUAL( 1, plcm_debt( &plcm ) );
     TEST_ASSERT_EQUAL( 10, plss_length( &plcm ) );
     plss_format( &plcm, "%s %s %s %s", s1, s1, s1, s1 );
     TEST_ASSERT_EQUAL( 53, plss_length( &plcm ) );
