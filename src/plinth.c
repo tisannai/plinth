@@ -77,10 +77,10 @@ char* pl_format( const char* fmt, ... )
 
 
 /* ------------------------------------------------------------
- * Segmented Memory Allocator:
+ * Arena Memory Allocator:
  */
 
-static pl_none plsm_node_init( plsm_node_t node, pl_bool_t debt )
+static pl_none plam_node_init( plam_node_t node, pl_bool_t debt )
 {
     node->prev = NULL;
     node->next = NULL;
@@ -89,48 +89,48 @@ static pl_none plsm_node_init( plsm_node_t node, pl_bool_t debt )
 }
 
 
-pl_none plsm_new( plsm_t plsm, pl_size_t size )
+pl_none plam_new( plam_t plam, pl_size_t size )
 {
-    if ( size > sizeof( plsm_s ) ) {
-        plsm->node = pl_alloc_memory( size );
-        if ( plsm->node ) {
-            plsm_node_init( plsm->node, pl_true );
-            plsm->size = size;
+    if ( size > sizeof( plam_s ) ) {
+        plam->node = pl_alloc_memory( size );
+        if ( plam->node ) {
+            plam_node_init( plam->node, pl_true );
+            plam->size = size;
         } else {
-            plsm->size = 0; // GCOV_EXCL_LINE
+            plam->size = 0; // GCOV_EXCL_LINE
         }
     } else {
-        plsm->node = NULL;
-        plsm->size = 0;
+        plam->node = NULL;
+        plam->size = 0;
     }
 }
 
 
-pl_none plsm_use( plsm_t plsm, pl_t node, pl_size_t size )
+pl_none plam_use( plam_t plam, pl_t node, pl_size_t size )
 {
-    plsm->node = node;
-    plsm->size = size;
-    plsm_node_init( node, pl_false );
+    plam->node = node;
+    plam->size = size;
+    plam_node_init( node, pl_false );
 }
 
 
-pl_none plsm_empty( plsm_t plsm, pl_size_t size )
+pl_none plam_empty( plam_t plam, pl_size_t size )
 {
-    plsm->node = NULL;
-    plsm->size = size;
+    plam->node = NULL;
+    plam->size = size;
 }
 
 
-pl_none plsm_del( plsm_t plsm )
+pl_none plam_del( plam_t plam )
 {
-    plsm_node_t left;
-    plsm_node_t right;
-    plsm_node_t cur;
+    plam_node_t left;
+    plam_node_t right;
+    plam_node_t cur;
 
-    if ( plsm->node ) {
+    if ( plam->node ) {
 
-        left = plsm->node->prev;
-        right = plsm->node;
+        left = plam->node->prev;
+        right = plam->node;
 
         while ( right ) {
             cur = right;
@@ -149,49 +149,49 @@ pl_none plsm_del( plsm_t plsm )
         }
     }
 
-    plsm->node = NULL;
-    plsm->size = 0;
+    plam->node = NULL;
+    plam->size = 0;
 }
 
 
-pl_t plsm_get( plsm_t plsm, pl_size_t size )
+pl_t plam_get( plam_t plam, pl_size_t size )
 {
-    if ( size > plsm->size - sizeof( plsm_node_s ) ) {
+    if ( size > plam->size - sizeof( plam_node_s ) ) {
         /* Too large allocation. */
         return NULL;
     }
 
-    if ( plsm->node == NULL ) {
-        plsm->node = pl_alloc_memory( plsm->size );
-        plsm_node_init( plsm->node, pl_true );
+    if ( plam->node == NULL ) {
+        plam->node = pl_alloc_memory( plam->size );
+        plam_node_init( plam->node, pl_true );
     }
 
     pl_size_t free;
-    free = plsm->size - sizeof( plsm_node_s ) - plsm->node->used;
+    free = plam->size - sizeof( plam_node_s ) - plam->node->used;
     if ( free < size ) {
         /* Allocate new node. */
-        plsm_node_t node;
-        node = pl_alloc_memory( plsm->size );
-        plsm_node_init( node, pl_true );
-        plsm->node->next = node;
-        node->prev = plsm->node;
-        plsm->node = node;
+        plam_node_t node;
+        node = pl_alloc_memory( plam->size );
+        plam_node_init( node, pl_true );
+        plam->node->next = node;
+        node->prev = plam->node;
+        plam->node = node;
     }
 
     pl_t ret;
-    ret = plsm->node->data + plsm->node->used;
-    plsm->node->used += size;
+    ret = plam->node->data + plam->node->used;
+    plam->node->used += size;
     return ret;
 }
 
 
-char* plsm_strdup( plsm_t plsm, const char* str )
+char* plam_strdup( plam_t plam, const char* str )
 {
     if ( str ) {
         char*     dup;
         pl_size_t length;
         length = strlen( str ) + 1;
-        dup = plsm_get( plsm, length );
+        dup = plam_get( plam, length );
         strncpy( dup, str, length );
         return dup;
     } else {
@@ -200,7 +200,7 @@ char* plsm_strdup( plsm_t plsm, const char* str )
 }
 
 
-char* plsm_format( plsm_t plsm, const char* fmt, ... )
+char* plam_format( plam_t plam, const char* fmt, ... )
 {
     va_list ap;
 
@@ -223,7 +223,7 @@ char* plsm_format( plsm_t plsm, const char* fmt, ... )
 
     char* mem;
 
-    mem = plsm_get( plsm, size + 1 );
+    mem = plam_get( plam, size + 1 );
     vsnprintf( mem, size + 1, fmt, ap );
     va_end( ap );
 
@@ -231,25 +231,25 @@ char* plsm_format( plsm_t plsm, const char* fmt, ... )
 }
 
 
-pl_size_t plsm_used( plsm_t plsm )
+pl_size_t plam_used( plam_t plam )
 {
-    if ( plsm->node ) {
-        return plsm->node->used;
+    if ( plam->node ) {
+        return plam->node->used;
     } else {
         return 0;
     }
 }
 
 
-pl_size_t plsm_size( plsm_t plsm )
+pl_size_t plam_size( plam_t plam )
 {
-    return plsm->size;
+    return plam->size;
 }
 
 
-pl_bool_t plsm_is_empty( plsm_t plsm )
+pl_bool_t plam_is_empty( plam_t plam )
 {
-    return ( plsm->node == NULL );
+    return ( plam->node == NULL );
 }
 
 
@@ -293,9 +293,9 @@ pl_none plcm_use( plcm_t plcm, pl_t mem, pl_size_t size )
 }
 
 
-pl_none plcm_use_plsm( plcm_t plcm, plsm_t plsm, pl_size_t size )
+pl_none plcm_use_plam( plcm_t plcm, plam_t plam, pl_size_t size )
 {
-    plcm_use( plcm, plsm_get( plsm, size ), size );
+    plcm_use( plcm, plam_get( plam, size ), size );
 }
 
 
@@ -413,6 +413,12 @@ pl_none plcm_set( plcm_t plcm, pl_pos_t pos, pl_t data, pl_size_t size )
 }
 
 
+pl_none plcm_terminate( plcm_t plcm, pl_size_t size )
+{
+    memset( plcm->data + plcm->used, 0, size );
+}
+
+
 pl_none plcm_reset( plcm_t plcm )
 {
     plcm->used = 0;
@@ -466,26 +472,6 @@ static pl_none plss_terminate( plcm_t plcm )
 }
 
 
-// static pl_none plss_setup( plcm_t plcm )
-// {
-//     if ( plcm->used == 0 ) {
-//         plcm->used = 1;
-//         plss_terminate( plcm );
-//     }
-// }
-
-// pl_none plcm_new( plcm_t plcm, pl_size_t size )
-
-// pl_none plss_new( plcm_t plcm, pl_size_t size )
-// {
-//     char ch;
-//     ch = 0;
-//     plcm_new( plcm, size );
-//     plcm_store( plcm, &ch, 1 );
-// }
-
-
-
 plcm_t plss_append( plcm_t plcm, plsr_s str )
 {
     plcm_resize( plcm, plcm->used + str.length + 1 );
@@ -495,10 +481,12 @@ plcm_t plss_append( plcm_t plcm, plsr_s str )
     return plcm;
 }
 
+
 plcm_t plss_append_c( plcm_t plcm, char* str )
 {
     return plss_append( plcm, plsr_from_c( str ) );
 }
+
 
 plcm_t plss_append_ch( plcm_t plcm, char ch )
 {
@@ -610,20 +598,6 @@ plsr_s plsr_from_c_length( const char* c_string, pl_size_t length )
     ret.length = length;
     return ret;
 }
-
-
-// plsr_s plsr_duplicate( plsr_s plsr )
-// {
-//     if ( plsr_is_invalid( plsr ) ) {
-//         return plsr;
-//     } else {
-//         plsr_s ret;
-//         ret.str_m = pl_alloc_memory( plsr.length + 1 );
-//         memcpy( ret.str_m, plsr.string, plsr.length + 1 );
-//         ret.length = plsr.length;
-//         return ret;
-//     }
-// }
 
 
 const char* plsr_string( plsr_s sr )

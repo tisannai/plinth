@@ -10,27 +10,9 @@
  *
  */
 
-/*
- * Common headers:
- */
-
-// #ifndef PLINTH_NO_STD_INCLUDE
-// #define PLINTH_STD_INCLUDE
-// #include <errno.h>
-// #include <stdlib.h>
-// #include <stdio.h>
-// #include <string.h>
-// #include <unistd.h>
-// // #include <libgen.h>
-// #include <ctype.h>
-// #include <stdarg.h>
-// #include <assert.h>
-// #include <stdint.h>
-// #endif
-
 #include <stdint.h>
 #include <stdarg.h>
-// #include <ctype.h>
+
 
 /* ------------------------------------------------------------
  * Simple type definition features:
@@ -155,34 +137,6 @@ pl_type( uint64_t, pl_id );   /**< Identification number type. */
 #define pl_for_n_x( n, x ) for ( int( x ) = 0; ( x ) < ( n ); ( x )++ )
 
 
-
-/* ------------------------------------------------------------
- * Low level memory.
- */
-
-// #ifndef PLINTH_NO_MEM_API
-//
-// /* clang-format off */
-// #define pl_new( type )                   calloc( 1, sizeof( type ) )
-// #define pl_new_n( type, n )              calloc( ( n ), sizeof( type ) )
-// #define pl_del( mem )                    free( mem )
-// #define pl_alloc( size )                 calloc( 1, ( size ) )
-// #define pl_realloc( mem, size )          realloc( ( mem ), ( size ) )
-// #define pl_free( mem )                   free( mem )
-// #define pl_strdup( str )                 strdup( str )
-// #define pl_memcpy( src, dst, size )      memcpy( ( dst ), ( src ), ( size ) )
-// #define pl_memcpy_type( src, dst, type ) memcpy( ( dst ), ( src ), sizeof( type ) )
-// #define pl_memmov( src, dst, size )      memmove( ( dst ), ( src ), ( size ) )
-// #define pl_memmov_type( src, dst, type ) memmove( ( dst ), ( src ), sizeof( type ) )
-// #define pl_memclr( mem, size )           memset( ( mem ), 0, ( size ) )
-// #define pl_memclr_type( mem, type )      memset( ( mem ), 0, sizeof( type ) )
-// #define pl_memcmp( m1, m2, size )        memcmp( ( m1 ), ( m2 ), ( size ) )
-// #define pl_memcmp_type( m1, m2, type)    memcmp( ( m1 ), ( m2 ), sizeof( type ) )
-// /* clang-format on */
-//
-// #endif
-
-
 /**
  * Default memory function callback.
  *
@@ -243,20 +197,33 @@ pl_struct( ui )
 
 
 /**
- * Segmented Memory Allocator Descriptor.
+ * Arena Memory Allocator Descriptor.
  */
-pl_struct_type( plsm_node ) pl_struct_body( plsm_node )
+pl_struct_type( plam_node ) pl_struct_body( plam_node )
 {
-    plsm_node_t prev;      /**< Previous node. */
-    plsm_node_t next;      /**< Next node. */
+    plam_node_t prev;      /**< Previous node. */
+    plam_node_t next;      /**< Next node. */
     pl_size_t   used;      /**< Used count for data. */
     pl_bool_t   debt;      /**< Reservation debt? */
     char*       data[ 0 ]; /**< Data. */
 };
-pl_struct( plsm )
+pl_struct( plam )
 {
-    plsm_node_t node; /**< Current node. */
+    plam_node_t node; /**< Current node. */
     pl_size_t   size; /**< Node size. */
+};
+
+
+
+/**
+ * Block Memory Allocator Descriptor.
+ */
+pl_struct( plbm )
+{
+    pl_size_t size; /**< Reservation size for data. */
+    pl_size_t used; /**< Used count for data. */
+    pl_t      data; /**< Pointer to data. */
+    pl_bool_t debt; /**< Reservation debt? */
 };
 
 
@@ -278,12 +245,8 @@ pl_struct( plcm )
  */
 pl_struct( plsr )
 {
-    pl_size_t length;
-    union
-    {
-        const char* string; /**< String content. */
-        char*       str_m;  /**< For assignment. */
-    };
+    pl_size_t   length;
+    const char* string; /**< String content. */
 };
 
 
@@ -294,20 +257,20 @@ pl_t    pl_realloc_memory( pl_t mem, pl_size_t size );
 char*   pl_strdup( const char* str );
 char*   pl_format( const char* fmt, ... );
 
-pl_none   plsm_new( plsm_t plsm, pl_size_t size );
-pl_none   plsm_use( plsm_t plsm, pl_t node, pl_size_t size );
-pl_none   plsm_empty( plsm_t plsm, pl_size_t size );
-pl_none   plsm_del( plsm_t plsm );
-pl_t      plsm_get( plsm_t plsm, pl_size_t size );
-char*     plsm_strdup( plsm_t plsm, const char* str );
-char*     plsm_format( plsm_t plsm, const char* fmt, ... );
-pl_size_t plsm_used( plsm_t plsm );
-pl_size_t plsm_size( plsm_t plsm );
-pl_bool_t plsm_is_empty( plsm_t plsm );
+pl_none   plam_new( plam_t plam, pl_size_t size );
+pl_none   plam_use( plam_t plam, pl_t node, pl_size_t size );
+pl_none   plam_empty( plam_t plam, pl_size_t size );
+pl_none   plam_del( plam_t plam );
+pl_t      plam_get( plam_t plam, pl_size_t size );
+char*     plam_strdup( plam_t plam, const char* str );
+char*     plam_format( plam_t plam, const char* fmt, ... );
+pl_size_t plam_used( plam_t plam );
+pl_size_t plam_size( plam_t plam );
+pl_bool_t plam_is_empty( plam_t plam );
 
 pl_none   plcm_new( plcm_t plcm, pl_size_t size );
 pl_none   plcm_use( plcm_t plcm, pl_t mem, pl_size_t size );
-pl_none   plcm_use_plsm( plcm_t plcm, plsm_t plsm, pl_size_t size );
+pl_none   plcm_use_plam( plcm_t plcm, plam_t plam, pl_size_t size );
 pl_none   plcm_empty( plcm_t plcm, pl_size_t first_size );
 pl_none   plcm_del( plcm_t plcm );
 pl_none   plcm_resize( plcm_t plcm, pl_size_t size );
@@ -316,6 +279,7 @@ pl_t      plcm_get_ref( plcm_t plcm, pl_size_t size );
 pl_pos_t  plcm_store( plcm_t plcm, pl_t data, pl_size_t size );
 pl_t      plcm_ref( plcm_t plcm, pl_pos_t pos );
 pl_none   plcm_set( plcm_t plcm, pl_pos_t pos, pl_t data, pl_size_t size );
+pl_none   plcm_terminate( plcm_t plcm, pl_size_t size );
 pl_none   plcm_reset( plcm_t plcm );
 pl_size_t plcm_used( plcm_t plcm );
 pl_size_t plcm_size( plcm_t plcm );
@@ -324,7 +288,6 @@ pl_bool_t plcm_debt( plcm_t plcm );
 pl_t      plcm_end( plcm_t plcm );
 pl_bool_t plcm_is_empty( plcm_t plcm );
 
-// pl_none plss_new( plcm_t plcm, pl_size_t size );
 plcm_t         plss_append( plcm_t plcm, plsr_s str );
 plcm_t         plss_append_c( plcm_t plcm, char* str );
 plcm_t         plss_append_ch( plcm_t plcm, char ch );
@@ -340,12 +303,11 @@ plsr_s      plsr_from_c( const char* c_string );
 plsr_s      plsr_from_c_length( const char* c_string, pl_size_t length );
 const char* plsr_string( plsr_s sr );
 pl_size_t   plsr_length( plsr_s sr );
-// plsr_s    plsr_duplicate( plsr_s plsr );
-pl_bool_t plsr_compare( plsr_s p1, plsr_s p2 );
-pl_bool_t plsr_compare_n( plsr_s p1, plsr_s p2, pl_size_t n );
-plsr_s    plsr_invalid( pl_none );
-pl_bool_t plsr_is_invalid( plsr_s plsr );
-pl_bool_t plsr_is_valid( plsr_s plsr );
+pl_bool_t   plsr_compare( plsr_s p1, plsr_s p2 );
+pl_bool_t   plsr_compare_n( plsr_s p1, plsr_s p2, pl_size_t n );
+plsr_s      plsr_invalid( pl_none );
+pl_bool_t   plsr_is_invalid( plsr_s plsr );
+pl_bool_t   plsr_is_valid( plsr_s plsr );
 
 
 #endif

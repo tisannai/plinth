@@ -9,7 +9,7 @@ void dbg_break( void ) {}
 void test_basic( void )
 {
     plcm_s plcm;
-    plsm_s plsm;
+    plam_s plam;
 
     char     mem[ 1024 ];
     char*    s1;
@@ -28,6 +28,8 @@ void test_basic( void )
 
 
     plcm_new( &plcm, 1024 );
+    plcm_terminate( &plcm, sizeof(char) );
+    TEST_ASSERT_EQUAL( 0, plss_length( &plcm ) );
     plss_append( &plcm, plsr_from_c( s1 ) );
     TEST_ASSERT_EQUAL( strlen( s1 ), plss_length( &plcm ) );
     TEST_ASSERT( strcmp( s1, plss_string( &plcm ) ) == 0 );
@@ -35,12 +37,12 @@ void test_basic( void )
     TEST_ASSERT( strcmp( "testing..._testing...", plss_string( &plcm ) ) == 0 );
     plcm_del( &plcm );
 
-    plsm_use( &plsm, mem, 1024 );
-    TEST_ASSERT_EQUAL( 0, plsm_used( &plsm ) );
-    m = plsm_get( &plsm, 256 );
-    TEST_ASSERT_EQUAL( 256, plsm_used( &plsm ) );
+    plam_use( &plam, mem, 1024 );
+    TEST_ASSERT_EQUAL( 0, plam_used( &plam ) );
+    m = plam_get( &plam, 256 );
+    TEST_ASSERT_EQUAL( 256, plam_used( &plam ) );
     TEST_ASSERT( m != NULL );
-    plsm_del( &plsm );
+    plam_del( &plam );
 
     s2 = pl_strdup( NULL );
     TEST_ASSERT_EQUAL( NULL, s2 );
@@ -54,84 +56,84 @@ void test_basic( void )
 }
 
 
-void test_plsm( void )
+void test_plam( void )
 {
-    plsm_s plsm;
+    plam_s plam;
     char   mem[ 1024 ];
     pl_t   m;
     char*  s1;
     char*  s2;
 
-    plsm_new( &plsm, 1024 );
-    TEST_ASSERT_EQUAL( 0, plsm_used( &plsm ) );
-    m = plsm_get( &plsm, 256 );
-    TEST_ASSERT_EQUAL( 256, plsm_used( &plsm ) );
+    plam_new( &plam, 1024 );
+    TEST_ASSERT_EQUAL( 0, plam_used( &plam ) );
+    m = plam_get( &plam, 256 );
+    TEST_ASSERT_EQUAL( 256, plam_used( &plam ) );
     TEST_ASSERT( m != NULL );
-    m = plsm_get( &plsm, 256 );
-    TEST_ASSERT_EQUAL( 512, plsm_used( &plsm ) );
+    m = plam_get( &plam, 256 );
+    TEST_ASSERT_EQUAL( 512, plam_used( &plam ) );
     TEST_ASSERT( m != NULL );
-    m = plsm_get( &plsm, 256 );
-    TEST_ASSERT_EQUAL( 768, plsm_used( &plsm ) );
+    m = plam_get( &plam, 256 );
+    TEST_ASSERT_EQUAL( 768, plam_used( &plam ) );
     TEST_ASSERT( m != NULL );
-    m = plsm_get( &plsm, 256 );
-    TEST_ASSERT_EQUAL( 256, plsm_used( &plsm ) );
+    m = plam_get( &plam, 256 );
+    TEST_ASSERT_EQUAL( 256, plam_used( &plam ) );
     TEST_ASSERT( m != NULL );
-    plsm_del( &plsm );
-    TEST_ASSERT_EQUAL( 0, plsm_size( &plsm ) );
+    plam_del( &plam );
+    TEST_ASSERT_EQUAL( 0, plam_size( &plam ) );
 
     /*
-      display plsm
-      display *plsm.node
+      display plam
+      display *plam.node
      */
 
-    plsm_use( &plsm, mem, 1024 );
-    TEST_ASSERT_EQUAL( 0, plsm_used( &plsm ) );
-    m = plsm_get( &plsm, 256 );
-    TEST_ASSERT_EQUAL( 256, plsm_used( &plsm ) );
+    plam_use( &plam, mem, 1024 );
+    TEST_ASSERT_EQUAL( 0, plam_used( &plam ) );
+    m = plam_get( &plam, 256 );
+    TEST_ASSERT_EQUAL( 256, plam_used( &plam ) );
     TEST_ASSERT( m != NULL );
-    m = plsm_get( &plsm, 256 );
-    TEST_ASSERT_EQUAL( 512, plsm_used( &plsm ) );
+    m = plam_get( &plam, 256 );
+    TEST_ASSERT_EQUAL( 512, plam_used( &plam ) );
     TEST_ASSERT( m != NULL );
-    m = plsm_get( &plsm, 256 );
-    TEST_ASSERT_EQUAL( 768, plsm_used( &plsm ) );
+    m = plam_get( &plam, 256 );
+    TEST_ASSERT_EQUAL( 768, plam_used( &plam ) );
     TEST_ASSERT( m != NULL );
-    m = plsm_get( &plsm, 256 );
-    TEST_ASSERT_EQUAL( 256, plsm_used( &plsm ) );
+    m = plam_get( &plam, 256 );
+    TEST_ASSERT_EQUAL( 256, plam_used( &plam ) );
     TEST_ASSERT( m != NULL );
-    plsm_del( &plsm );
-    TEST_ASSERT_EQUAL( 0, plsm_size( &plsm ) );
+    plam_del( &plam );
+    TEST_ASSERT_EQUAL( 0, plam_size( &plam ) );
 
-    plsm_empty( &plsm, 2048 );
-    TEST_ASSERT( plsm_is_empty( &plsm ) );
+    plam_empty( &plam, 2048 );
+    TEST_ASSERT( plam_is_empty( &plam ) );
 
-    plsm_use( &plsm, mem, 1024 );
+    plam_use( &plam, mem, 1024 );
     s1 = "testing...";
-    s2 = plsm_strdup( &plsm, s1 );
+    s2 = plam_strdup( &plam, s1 );
     TEST_ASSERT( strcmp( s1, s2 ) == 0 );
-    s2 = plsm_format( &plsm, "hello %s\n", s1 );
+    s2 = plam_format( &plam, "hello %s\n", s1 );
     TEST_ASSERT( strcmp( "hello testing...\n", s2 ) == 0 );
-    s2 = plsm_strdup( &plsm, NULL );
+    s2 = plam_strdup( &plam, NULL );
     TEST_ASSERT_EQUAL( NULL, s2 );
-    plsm_del( &plsm );
+    plam_del( &plam );
 
-    plsm_new( &plsm, 2 );
-    TEST_ASSERT( plsm_is_empty( &plsm ) );
+    plam_new( &plam, 2 );
+    TEST_ASSERT( plam_is_empty( &plam ) );
 
-    plsm_empty( &plsm, 1024 );
-    TEST_ASSERT_EQUAL( 0, plsm_used( &plsm ) );
-    m = plsm_get( &plsm, 256 );
-    TEST_ASSERT_EQUAL( 256, plsm_used( &plsm ) );
+    plam_empty( &plam, 1024 );
+    TEST_ASSERT_EQUAL( 0, plam_used( &plam ) );
+    m = plam_get( &plam, 256 );
+    TEST_ASSERT_EQUAL( 256, plam_used( &plam ) );
     TEST_ASSERT( m != NULL );
-    m = plsm_get( &plsm, 1024 );
+    m = plam_get( &plam, 1024 );
     TEST_ASSERT( m == NULL );
-    plsm_del( &plsm );
+    plam_del( &plam );
 }
 
 
 void test_plcm( void )
 {
     plcm_s plcm;
-    plsm_s plsm;
+    plam_s plam;
     char   mem[ 1024 ];
     pl_t   m;
     char*  s1;
@@ -157,8 +159,8 @@ void test_plcm( void )
     TEST_ASSERT( strcmp( s1, sr.string ) == 0 );
     plcm_del( &plcm );
 
-    plsm_use( &plsm, mem, 1024 );
-    plcm_use_plsm( &plcm, &plsm, 4 );
+    plam_use( &plam, mem, 1024 );
+    plcm_use_plam( &plcm, &plam, 4 );
     TEST_ASSERT_EQUAL( 0, plcm_debt( &plcm ) );
     plss_reformat( &plcm, "%s", s1 );
     TEST_ASSERT_EQUAL( 1, plcm_debt( &plcm ) );
@@ -175,19 +177,19 @@ void test_plcm( void )
 
     plcm_del( &plcm );
     TEST_ASSERT_EQUAL( 1, plcm_is_empty( &plcm ) );
-    plsm_del( &plsm );
-    TEST_ASSERT_EQUAL( 1, plsm_is_empty( &plsm ) );
+    plam_del( &plam );
+    TEST_ASSERT_EQUAL( 1, plam_is_empty( &plam ) );
 
     plcm_empty( &plcm, 16 );
     TEST_ASSERT_EQUAL( 1, plcm_is_empty( &plcm ) );
 
-    plsm_use( &plsm, mem, 1024 );
-    plcm_use_plsm( &plcm, &plsm, 4 );
+    plam_use( &plam, mem, 1024 );
+    plcm_use_plam( &plcm, &plam, 4 );
     TEST_ASSERT_EQUAL( 0, plcm_debt( &plcm ) );
     plss_reformat( &plcm, "%s", s1 );
 
-    plsm_use( &plsm, mem, 1024 );
-    plcm_use_plsm( &plcm, &plsm, 8 );
+    plam_use( &plam, mem, 1024 );
+    plcm_use_plam( &plcm, &plam, 8 );
     TEST_ASSERT_EQUAL( 0, plcm_debt( &plcm ) );
     plss_reformat( &plcm, "%s", s1 );
     TEST_ASSERT_EQUAL( 1, plcm_debt( &plcm ) );
@@ -222,7 +224,7 @@ void test_plcm( void )
 void test_plsr( void )
 {
     //     plcm_s plcm;
-    //     plsm_s plsm;
+    //     plam_s plam;
     //     char mem[ 1024 ];
     //     pl_t m;
     char*  s1;
