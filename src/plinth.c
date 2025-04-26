@@ -114,6 +114,12 @@ pl_none plam_use( plam_t plam, pl_t node, pl_size_t size )
 }
 
 
+pl_none plam_use_plam( plam_t plam, plam_t base, pl_size_t size )
+{
+    plam_use( plam, plam_get( base, size ), size );
+}
+
+
 pl_none plam_empty( plam_t plam, pl_size_t size )
 {
     plam->node = NULL;
@@ -182,6 +188,12 @@ pl_t plam_get( plam_t plam, pl_size_t size )
     ret = plam->node->data + plam->node->used;
     plam->node->used += size;
     return ret;
+}
+
+
+pl_none plam_put( plam_t plam, pl_size_t size )
+{
+    plam->node->used -= size;
 }
 
 

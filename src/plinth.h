@@ -198,6 +198,15 @@ pl_struct( ui )
 
 /**
  * Arena Memory Allocator Descriptor.
+ *
+ *        plam_node_s
+ *       / used mem
+ *      / /         ,unused mem
+ *     #+++- <-> #+---
+ *     '---'     '---'
+ *       \         \
+ *        node      current node
+ *        size
  */
 pl_struct_type( plam_node ) pl_struct_body( plam_node )
 {
@@ -220,16 +229,28 @@ pl_struct( plam )
  */
 pl_struct( plbm )
 {
-    pl_size_t size; /**< Reservation size for data. */
-    pl_size_t used; /**< Used count for data. */
-    pl_t      data; /**< Pointer to data. */
-    pl_bool_t debt; /**< Reservation debt? */
+    plam_node_t node; /**< Current node. */
+    pl_size_t   nsize; /**< Node size. */
+    pl_size_t   bsize; /**< Block size. */
 };
+
+// pl_struct( plbm )
+// {
+//     pl_size_t size; /**< Reservation size for data. */
+//     pl_size_t used; /**< Used count for data. */
+//     pl_t      data; /**< Pointer to data. */
+//     pl_bool_t debt; /**< Reservation debt? */
+// };
 
 
 
 /**
  * Continuous Memory Allocator Descriptor.
+ *
+ *        plcm_s    data
+ *       /         /    used
+ *      /         /    /   ,size
+ *     #    =>   +++++-----
  */
 pl_struct( plcm )
 {
@@ -250,6 +271,15 @@ pl_struct( plsr )
 };
 
 
+#define plam_get_with_type(plam,type) plam_get( (plam), sizeof( type ) );
+#define plam_put_with_type(plam,type) plam_put( (plam), sizeof( type ) );
+
+#define plcm_get_pos_with_type(plam,type) plcm_get_pos( (plam), sizeof( type ) );
+#define plcm_get_ref_with_type(plam,type) plcm_get_ref( (plam), sizeof( type ) );
+#define plcm_store_with_type(plam,data,type) plcm_store( (plam), (data), sizeof( type ) );
+#define plcm_set_with_type(plam,pos,data,type) plcm_set( (plcm), (pos), (data), sizeof( type ) );
+#define plcm_terminate_with_type(plam,type) plcm_terminate( (plam), sizeof( type ) );
+
 
 pl_t    pl_alloc_memory( pl_size_t size );
 pl_none pl_free_memory( pl_t mem );
@@ -259,9 +289,11 @@ char*   pl_format( const char* fmt, ... );
 
 pl_none   plam_new( plam_t plam, pl_size_t size );
 pl_none   plam_use( plam_t plam, pl_t node, pl_size_t size );
+pl_none   plam_use_plam( plam_t plam, plam_t base, pl_size_t size );
 pl_none   plam_empty( plam_t plam, pl_size_t size );
 pl_none   plam_del( plam_t plam );
 pl_t      plam_get( plam_t plam, pl_size_t size );
+pl_none   plam_put( plam_t plam, pl_size_t size );
 char*     plam_strdup( plam_t plam, const char* str );
 char*     plam_format( plam_t plam, const char* fmt, ... );
 pl_size_t plam_used( plam_t plam );
