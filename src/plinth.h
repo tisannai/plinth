@@ -194,6 +194,12 @@ pl_struct( ui )
 #define PLINTH_ALIGN_TO( size, alignment ) \
     ( ( ( ( size ) + ( alignment ) - 1 ) / ( alignment ) ) * ( alignment ) )
 
+#define PLINTH_ADDR_ADD(addr,offset) (((char*)addr)+offset)
+#define PLINTH_ADDR_SUB(addr,offset) (((char*)addr)-offset)
+
+// bool is_power_of_two(unsigned int n) {
+//     return n != 0 && (n & (n - 1)) == 0;
+// }
 
 
 /**
@@ -208,7 +214,8 @@ pl_struct( ui )
  *        node      current node
  *        size
  */
-pl_struct_type( plam_node ) pl_struct_body( plam_node )
+pl_struct_type( plam_node );
+pl_struct_body( plam_node )
 {
     plam_node_t prev;      /**< Previous node. */
     pl_size_t   used;      /**< Used count for data. */
@@ -225,21 +232,22 @@ pl_struct( plam )
 
 /**
  * Block Memory Allocator Descriptor.
+ *
+ *        ..       .-.
+ *        v|       | v
+ *     #++-- <-> #+-+-
+ *        |^       ^ |
+ *        o'-------|-'
+ *                 head
  */
 pl_struct( plbm )
 {
-    plam_node_t node; /**< Current node. */
+    plam_node_t node;  /**< Current node. */
+    pl_t        head;  /**< Block chain head. */
     pl_size_t   nsize; /**< Node size. */
     pl_size_t   bsize; /**< Block size. */
+    pl_size_t   itail; /**< Init tail count. */
 };
-
-// pl_struct( plbm )
-// {
-//     pl_size_t size; /**< Reservation size for data. */
-//     pl_size_t used; /**< Used count for data. */
-//     pl_t      data; /**< Pointer to data. */
-//     pl_bool_t debt; /**< Reservation debt? */
-// };
 
 
 
@@ -270,14 +278,15 @@ pl_struct( plsr )
 };
 
 
-#define plam_get_with_type(plam,type) plam_get( (plam), sizeof( type ) );
-#define plam_put_with_type(plam,type) plam_put( (plam), sizeof( type ) );
+#define plam_get_with_type( plam, type ) plam_get( ( plam ), sizeof( type ) );
+#define plam_put_with_type( plam, type ) plam_put( ( plam ), sizeof( type ) );
 
-#define plcm_get_pos_with_type(plam,type) plcm_get_pos( (plam), sizeof( type ) );
-#define plcm_get_ref_with_type(plam,type) plcm_get_ref( (plam), sizeof( type ) );
-#define plcm_store_with_type(plam,data,type) plcm_store( (plam), (data), sizeof( type ) );
-#define plcm_set_with_type(plam,pos,data,type) plcm_set( (plcm), (pos), (data), sizeof( type ) );
-#define plcm_terminate_with_type(plam,type) plcm_terminate( (plam), sizeof( type ) );
+#define plcm_get_pos_with_type( plam, type ) plcm_get_pos( ( plam ), sizeof( type ) );
+#define plcm_get_ref_with_type( plam, type ) plcm_get_ref( ( plam ), sizeof( type ) );
+#define plcm_store_with_type( plam, data, type ) plcm_store( ( plam ), ( data ), sizeof( type ) );
+#define plcm_set_with_type( plam, pos, data, type ) \
+    plcm_set( ( plcm ), ( pos ), ( data ), sizeof( type ) );
+#define plcm_terminate_with_type( plam, type ) plcm_terminate( ( plam ), sizeof( type ) );
 
 
 pl_t    pl_alloc_memory( pl_size_t size );
@@ -298,6 +307,16 @@ char*     plam_format( plam_t plam, const char* fmt, ... );
 pl_size_t plam_used( plam_t plam );
 pl_size_t plam_size( plam_t plam );
 pl_bool_t plam_is_empty( plam_t plam );
+
+pl_none   plbm_new( plbm_t plbm, pl_size_t nsize, pl_size_t bsize );
+pl_none   plbm_use( plbm_t plbm, pl_t node, pl_size_t nsize, pl_size_t bsize );
+pl_none   plbm_empty( plbm_t plbm, pl_size_t nsize, pl_size_t bsize );
+pl_none   plbm_del( plbm_t plbm );
+pl_t      plbm_get( plbm_t plbm );
+pl_none   plbm_put( plbm_t plbm, pl_t block );
+pl_size_t plbm_nsize( plbm_t plbm );
+pl_size_t plbm_bsize( plbm_t plbm );
+pl_bool_t plbm_is_empty( plbm_t plbm );
 
 pl_none   plcm_new( plcm_t plcm, pl_size_t size );
 pl_none   plcm_use( plcm_t plcm, pl_t mem, pl_size_t size );

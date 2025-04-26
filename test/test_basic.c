@@ -150,6 +150,32 @@ void test_plam( void )
 }
 
 
+void test_plbm( void )
+{
+    plbm_s plbm;
+    char   mem[ 1024 ];
+    pl_t   m1, m2, m3;
+    char*  s1;
+    char*  s2;
+
+    plbm_new( &plbm, sizeof( plam_node_s ) + 2 * 8, 8 );
+    m1 = plbm_get( &plbm );
+    TEST_ASSERT( m1 != NULL );
+    m2 = plbm_get( &plbm );
+    TEST_ASSERT( m2 != NULL );
+    m3 = plbm_get( &plbm );
+    TEST_ASSERT( m3 != NULL );
+    plbm_put( &plbm, m3 );
+    plbm_put( &plbm, m1 );
+    plbm_put( &plbm, m2 );
+    for ( int i = 0; i < 4; i++ ) {
+        m1 = plbm_get( &plbm );
+        TEST_ASSERT( m1 != NULL );
+    }
+    plbm_del( &plbm );
+}
+
+
 void test_plcm( void )
 {
     plcm_s plcm;
