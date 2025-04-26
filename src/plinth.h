@@ -211,7 +211,6 @@ pl_struct( ui )
 pl_struct_type( plam_node ) pl_struct_body( plam_node )
 {
     plam_node_t prev;      /**< Previous node. */
-    plam_node_t next;      /**< Next node. */
     pl_size_t   used;      /**< Used count for data. */
     pl_bool_t   debt;      /**< Reservation debt? */
     char*       data[ 0 ]; /**< Data. */

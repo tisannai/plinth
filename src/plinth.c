@@ -83,7 +83,6 @@ char* pl_format( const char* fmt, ... )
 static pl_none plam_node_init( plam_node_t node, pl_bool_t debt )
 {
     node->prev = NULL;
-    node->next = NULL;
     node->used = 0;
     node->debt = debt;
 }
@@ -130,20 +129,16 @@ pl_none plam_empty( plam_t plam, pl_size_t size )
 pl_none plam_del( plam_t plam )
 {
     plam_node_t left;
-    plam_node_t right;
+//     plam_node_t right;
     plam_node_t cur;
 
     if ( plam->node ) {
 
         left = plam->node->prev;
-        right = plam->node;
+        cur = plam->node;
 
-        while ( right ) {
-            cur = right;
-            right = right->next;
-            if ( cur->debt ) {
-                pl_free_memory( cur );
-            }
+        if ( cur->debt ) {
+            pl_free_memory( cur );
         }
 
         while ( left ) {
@@ -179,7 +174,6 @@ pl_t plam_get( plam_t plam, pl_size_t size )
         plam_node_t node;
         node = pl_alloc_memory( plam->size );
         plam_node_init( node, pl_true );
-        plam->node->next = node;
         node->prev = plam->node;
         plam->node = node;
     }
