@@ -3,7 +3,7 @@
  * @author Tero Isannainen <tero.isannainen@gmail.com>
  * @date   Sat Apr 19 10:45:54 EEST 2025
  *
- * @brief  Plinth - Arena style memory allocator.
+ * @brief  Plinth - Base layer library.
  *
  */
 
@@ -17,7 +17,7 @@
 
 
 /* ------------------------------------------------------------
- * Low level memory allocation:
+ * Basic (heap) memory allocation:
  */
 
 pl_t pl_alloc_memory( pl_size_t size )
@@ -377,6 +377,12 @@ pl_none plbm_use( plbm_t plbm, pl_t node, pl_size_t nsize, pl_size_t bsize )
 }
 
 
+pl_none plbm_use_plam( plbm_t plbm, plam_t base, pl_size_t nsize, pl_size_t bsize )
+{
+    plbm_use( plbm, plam_get( base, nsize ), nsize, bsize );
+}
+
+
 pl_none plbm_empty( plbm_t plbm, pl_size_t nsize, pl_size_t bsize )
 {
     if ( plbm_is_valid( nsize, bsize ) ) {
@@ -519,10 +525,10 @@ pl_none plcm_use_plam( plcm_t plcm, plam_t plam, pl_size_t size )
 }
 
 
-pl_none plcm_empty( plcm_t plcm, pl_size_t first_size )
+pl_none plcm_empty( plcm_t plcm, pl_size_t size )
 {
     plcm_init( plcm );
-    plcm->size = first_size;
+    plcm->size = size;
 }
 
 
@@ -786,22 +792,22 @@ pl_none plss_va_format( plcm_t plcm, const char* fmt, va_list ap )
 }
 
 
+const char* plss_string( plcm_t plcm )
+{
+    return (const char*)plcm_ref( plcm, 0 );
+}
+
+
 pl_size_t plss_length( plcm_t plcm )
 {
     return plcm_used( plcm );
 }
 
 
-const pl_str_t plss_string( plcm_t plcm )
-{
-    return (const pl_str_t)plcm_ref( plcm, 0 );
-}
-
-
 plsr_s plss_ref( plcm_t plcm )
 {
     plsr_s ret;
-    ret.string = (pl_str_t)plss_string( plcm );
+    ret.string = (char*)plss_string( plcm );
     ret.length = plss_length( plcm );
     return ret;
 }
@@ -811,22 +817,22 @@ plsr_s plss_ref( plcm_t plcm )
  * String Referencing:
  */
 
-plsr_s plsr_from_c( const char* c_string )
+plsr_s plsr_from_c( const char* str )
 {
     plsr_s ret;
-    ret.string = c_string;
-    if ( c_string ) {
-        ret.length = strlen( c_string );
+    ret.string = str;
+    if ( str ) {
+        ret.length = strlen( str );
     } else {
         ret.length = 0;
     }
     return ret;
 }
 
-plsr_s plsr_from_c_length( const char* c_string, pl_size_t length )
+plsr_s plsr_from_c_length( const char* str, pl_size_t length )
 {
     plsr_s ret;
-    ret.string = c_string;
+    ret.string = str;
     ret.length = length;
     return ret;
 }
