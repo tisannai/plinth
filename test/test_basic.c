@@ -8,8 +8,9 @@ void dbg_break( void ) {}
 
 void test_basic( void )
 {
-    plcm_s plcm;
     plam_s plam;
+    plbm_s plbm;
+    plcm_s plcm;
 
     char     mem[ 1024 ];
     char*    s1;
@@ -28,7 +29,7 @@ void test_basic( void )
 
 
     plcm_new( &plcm, 1024 );
-    plcm_terminate( &plcm, sizeof(char) );
+    plcm_terminate( &plcm, sizeof( char ) );
     TEST_ASSERT_EQUAL( 0, plss_length( &plcm ) );
     plss_append( &plcm, plsr_from_c( s1 ) );
     TEST_ASSERT_EQUAL( strlen( s1 ), plss_length( &plcm ) );
@@ -55,6 +56,11 @@ void test_basic( void )
     s2 = pl_format( "%s_%s", s1, s1 );
     TEST_ASSERT( strcmp( "testing..._testing...", s2 ) == 0 );
     pl_free_memory( s2 );
+
+    plbm_use( &plbm, mem, 124, 8 );
+    TEST_ASSERT_EQUAL( 124, plbm_nsize( &plbm ) );
+    TEST_ASSERT_EQUAL( 8, plbm_bsize( &plbm ) );
+    plbm_del( &plbm );
 }
 
 
@@ -85,7 +91,7 @@ void test_plam( void )
     TEST_ASSERT_EQUAL( 0, plam_size( &plam ) );
 
 
-    /* Test plam_use_plam */
+    /* Test plam_use_plam. */
     plam_use( &plam, mem, 1024 );
     TEST_ASSERT_EQUAL( 0, plam_used( &plam ) );
     plam_use_plam( &plam2, &plam, 256 );
@@ -147,6 +153,28 @@ void test_plam( void )
     m = plam_get( &plam, 1024 );
     TEST_ASSERT( m == NULL );
     plam_del( &plam );
+
+    /* Test plam_get/plam_put. */
+    plam_use( &plam, mem, 1024 );
+    TEST_ASSERT_EQUAL( 0, plam_used( &plam ) );
+    for ( int i = 0; i < 6; i++ ) {
+        m = plam_get( &plam, 256 );
+        TEST_ASSERT( m != NULL );
+    }
+    TEST_ASSERT_EQUAL( 768, plam_used( &plam ) );
+    for ( int i = 0; i < 6; i++ ) {
+        plam_put( &plam, 256 );
+        TEST_ASSERT( m != NULL );
+    }
+    TEST_ASSERT_EQUAL( 0, plam_used( &plam ) );
+    plam_put( &plam, 256 );
+    TEST_ASSERT_EQUAL( 0, plam_used( &plam ) );
+    for ( int i = 0; i < 6; i++ ) {
+        m = plam_get( &plam, 256 );
+        TEST_ASSERT( m != NULL );
+    }
+    TEST_ASSERT_EQUAL( 768, plam_used( &plam ) );
+    plam_del( &plam );
 }
 
 
@@ -173,6 +201,51 @@ void test_plbm( void )
         TEST_ASSERT( m1 != NULL );
     }
     plbm_del( &plbm );
+
+
+    plbm_use( &plbm, mem, sizeof( plam_node_s ) + 2 * 8, 8 );
+    m1 = plbm_get( &plbm );
+    TEST_ASSERT( m1 != NULL );
+    m2 = plbm_get( &plbm );
+    TEST_ASSERT( m2 != NULL );
+    m3 = plbm_get( &plbm );
+    TEST_ASSERT( m3 != NULL );
+    plbm_put( &plbm, m3 );
+    plbm_put( &plbm, m1 );
+    plbm_put( &plbm, m2 );
+    for ( int i = 0; i < 4; i++ ) {
+        m1 = plbm_get( &plbm );
+        TEST_ASSERT( m1 != NULL );
+    }
+    plbm_del( &plbm );
+
+
+    plbm_empty( &plbm, sizeof( plam_node_s ) + 2 * 8, 8 );
+    m1 = plbm_get( &plbm );
+    TEST_ASSERT( m1 != NULL );
+    m2 = plbm_get( &plbm );
+    TEST_ASSERT( m2 != NULL );
+    m3 = plbm_get( &plbm );
+    TEST_ASSERT( m3 != NULL );
+    plbm_put( &plbm, m3 );
+    plbm_put( &plbm, m1 );
+    plbm_put( &plbm, m2 );
+    for ( int i = 0; i < 4; i++ ) {
+        m1 = plbm_get( &plbm );
+        TEST_ASSERT( m1 != NULL );
+    }
+    plbm_del( &plbm );
+
+    plbm_new( &plbm, 4, 4 );
+    TEST_ASSERT_EQUAL( pl_true, plbm_is_empty( &plbm ) );
+    plbm_use( &plbm, mem, 4, 4 );
+    TEST_ASSERT_EQUAL( pl_true, plbm_is_empty( &plbm ) );
+    plbm_empty( &plbm, 4, 4 );
+    TEST_ASSERT_EQUAL( pl_true, plbm_is_empty( &plbm ) );
+    plbm_empty( &plbm, 1024, 4 );
+    TEST_ASSERT_EQUAL( pl_true, plbm_is_empty( &plbm ) );
+    plbm_empty( &plbm, 4, 8 );
+    TEST_ASSERT_EQUAL( pl_true, plbm_is_empty( &plbm ) );
 }
 
 

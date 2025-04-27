@@ -41,14 +41,14 @@
  *             pl_int y;
  *         };
  *
- *   Becomes:
- *       typedef struct point_struct_s point_s;
- *       typedef point_s* point_t;
- *       typedef point_s** point_p;
- *       struct point_struct_s {
- *           pl_int x;
- *           pl_int y;
- *       };
+ *     Becomes:
+ *         typedef struct point_struct_s point_s;
+ *         typedef point_s* point_t;
+ *         typedef point_s** point_p;
+ *         struct point_struct_s {
+ *             pl_int x;
+ *             pl_int y;
+ *         };
  * @endcode
  */
 #define pl_struct( name )                   \
@@ -64,25 +64,28 @@
 
 #define pl_struct_body( name ) struct name##struct_s
 
+
 /**
  * Define enumeration and corresponding type. An enum is created with
  * name+"_e", a typedef is created with name+"_t".
  *
  * Example:
+ * @code
+ *     Definition:
+ *         pl_enum(some_runtype) {
+ *           RUN_NONE,
+ *           RUN_TASK,
+ *           RUN_FUNC
+ *         };
  *
- *   pl_enum(some_runtype) {
- *     RUN_NONE,
- *     RUN_TASK,
- *     RUN_FUNC
- *   };
- *
- *   // Becomes...
- *   typedef enum pl_runtype_e pl_runtype_t;
- *   enum pl_runtype_e {
- *     RUN_NONE,
- *     RUN_TASK,
- *     RUN_FUNC
- *   };
+ *     Becomes:
+ *         typedef enum pl_runtype_e pl_runtype_t;
+ *         enum pl_runtype_e {
+ *           RUN_NONE,
+ *           RUN_TASK,
+ *           RUN_FUNC
+ *         };
+ * @endcode
  */
 #define pl_enum( name )             \
     typedef enum name##_e name##_t; \
@@ -137,15 +140,15 @@ pl_type( uint64_t, pl_id );   /**< Identification number type. */
 #define pl_for_n_x( n, x ) for ( int( x ) = 0; ( x ) < ( n ); ( x )++ )
 
 
-/**
- * Default memory function callback.
- *
- * Params:
- * * obj: Container object.
- * * env: Program/library related environment.
- * * arg: Dynamic argument (transaction related context).
- */
-typedef pl_t ( *pl_mem_cb_fn )( pl_t obj, pl_t env, pl_t arg );
+// /**
+//  * Default memory function callback.
+//  *
+//  * Params:
+//  * * obj: Container object.
+//  * * env: Program/library related environment.
+//  * * arg: Dynamic argument (transaction related context).
+//  */
+// typedef pl_t ( *pl_mem_cb_fn )( pl_t obj, pl_t env, pl_t arg );
 
 
 
@@ -178,24 +181,23 @@ typedef pl_t ( *pl_mem_cb_fn )( pl_t obj, pl_t env, pl_t arg );
 
 inline pl_none pl_dummy( pl_none ) {}
 
-
-typedef void* ( *ui_f )( void* env, void* arg );
+typedef pl_t ( *pl_ui_f )( pl_t env, pl_t arg );
 
 /**
  * Universal Interface.
  */
-pl_struct( ui )
+pl_struct( pl_ui )
 {
-    ui_f  fun; /**< Object method. */
-    void* env; /**< Object. */
+    pl_ui_f fun; /**< Object method. */
+    pl_t    env; /**< Object. */
 };
 
 /* Align size (up) to multiple of alignment. */
 #define PLINTH_ALIGN_TO( size, alignment ) \
     ( ( ( ( size ) + ( alignment ) - 1 ) / ( alignment ) ) * ( alignment ) )
 
-#define PLINTH_ADDR_ADD(addr,offset) (((char*)addr)+offset)
-#define PLINTH_ADDR_SUB(addr,offset) (((char*)addr)-offset)
+// #define PLINTH_ADDR_ADD(addr,offset) (((char*)addr)+offset)
+// #define PLINTH_ADDR_SUB(addr,offset) (((char*)addr)-offset)
 
 // bool is_power_of_two(unsigned int n) {
 //     return n != 0 && (n & (n - 1)) == 0;
@@ -218,9 +220,10 @@ pl_struct_type( plam_node );
 pl_struct_body( plam_node )
 {
     plam_node_t prev;      /**< Previous node. */
+    plam_node_t next;      /**< Next node. */
     pl_size_t   used;      /**< Used count for data. */
     pl_bool_t   debt;      /**< Reservation debt? */
-    char*       data[ 0 ]; /**< Data. */
+    uint8_t     data[ 0 ]; /**< Data. */
 };
 pl_struct( plam )
 {

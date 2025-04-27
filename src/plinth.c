@@ -88,6 +88,7 @@ char* pl_format( const char* fmt, ... )
 static pl_none plam_node_init( plam_node_t node, pl_bool_t debt )
 {
     node->prev = NULL;
+    node->next = NULL;
     node->used = 0;
     node->debt = debt;
 }
@@ -98,13 +99,18 @@ static plam_node_t plam_node_del( plam_node_t node )
     if ( node ) {
 
         plam_node_t left;
+        plam_node_t right;
         plam_node_t cur;
 
         left = node->prev;
-        cur = node;
+        right = node;
 
-        if ( cur->debt ) {
-            pl_free_memory( cur );
+        while ( right ) {
+            cur = right;
+            right = right->next;
+            if ( cur->debt ) {
+                pl_free_memory( cur );
+            }
         }
 
         while ( left ) {
@@ -183,24 +189,41 @@ pl_t plam_get( plam_t plam, pl_size_t size )
     }
 
     pl_size_t free;
-    free = plam->size - sizeof( plam_node_s ) - plam->node->used;
-    if ( free < size ) {
-        /* Allocate new node. */
-        plam_node_t node;
-        node = pl_alloc_memory( plam->size );
-        if ( node == NULL ) {
-            // GCOV_EXCL_START
-            return NULL;
-            // GCOV_EXCL_STOP
+
+    while ( 1 ) {
+
+        free = plam->size - sizeof( plam_node_s ) - plam->node->used;
+
+        if ( free < size ) {
+
+            if ( plam->node->next ) {
+
+                plam->node = plam->node->next;
+
+            } else {
+
+                /* Allocate new node. */
+                plam_node_t node;
+                node = pl_alloc_memory( plam->size );
+                if ( node == NULL ) {
+                    // GCOV_EXCL_START
+                    return NULL;
+                    // GCOV_EXCL_STOP
+                }
+                plam_node_init( node, pl_true );
+                plam->node->next = node;
+                node->prev = plam->node;
+                plam->node = node;
+                break;
+            }
+        } else {
+            break;
         }
-        plam_node_init( node, pl_true );
-        node->prev = plam->node;
-        plam->node = node;
     }
 
     pl_t ret;
-    // ret = plam->node->data + plam->node->used;
-    ret = PLINTH_ADDR_ADD( plam->node->data, plam->node->used );
+    ret = plam->node->data + plam->node->used;
+    // ret = PLINTH_ADDR_ADD( plam->node->data, plam->node->used );
     plam->node->used += size;
     return ret;
 }
@@ -208,7 +231,16 @@ pl_t plam_get( plam_t plam, pl_size_t size )
 
 pl_none plam_put( plam_t plam, pl_size_t size )
 {
-    plam->node->used -= size;
+    while ( 1 ) {
+        if ( plam->node->used > 0 ) {
+            plam->node->used -= size;
+            break;
+        } else if ( plam->node->prev ) {
+            plam->node = plam->node->prev;
+        } else {
+            break;
+        }
+    }
 }
 
 
@@ -384,7 +416,8 @@ pl_t plbm_get( plbm_t plbm )
         ret = plbm->head;
         plbm->head = *( (pl_t*)plbm->head );
     } else if ( plbm->itail > 0 ) {
-        ret = PLINTH_ADDR_ADD( plbm->node->data, ( ( plbm_itail( plbm ) - plbm->itail ) * plbm->bsize ) );
+        ret = plbm->node->data + ( ( plbm_itail( plbm ) - plbm->itail ) * plbm->bsize );
+        // ret = PLINTH_ADDR_ADD( plbm->node->data, ( ( plbm_itail( plbm ) - plbm->itail ) * plbm->bsize ) );
         plbm->itail--;
     } else {
         /* Allocate new node. */
@@ -396,6 +429,7 @@ pl_t plbm_get( plbm_t plbm )
             // GCOV_EXCL_STOP
         }
         plam_node_init( node, pl_true );
+        plbm->node->next = node;
         node->prev = plbm->node;
         plbm->node = node;
         ret = node->data;
