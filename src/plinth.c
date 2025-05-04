@@ -238,7 +238,6 @@ pl_t plam_get( plam_t plam, pl_size_t size )
 
     pl_t ret;
     ret = plam->node->data + plam->node->used;
-    // ret = PLINTH_ADDR_ADD( plam->node->data, plam->node->used );
     plam->node->used += size;
     return ret;
 }
@@ -452,7 +451,6 @@ pl_t plbm_get( plbm_t plbm )
         plbm->head = *( (pl_t*)plbm->head );
     } else if ( plbm->itail > 0 ) {
         ret = plbm->node->data + ( ( plbm_itail( plbm ) - plbm->itail ) * plbm->bsize );
-        // ret = PLINTH_ADDR_ADD( plbm->node->data, ( ( plbm_itail( plbm ) - plbm->itail ) * plbm->bsize ) );
         plbm->itail--;
     } else {
         /* Allocate new node. */
