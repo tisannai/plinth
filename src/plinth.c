@@ -1,5 +1,5 @@
 /**
- * @file   plinth.c
+ * file    plinth.c
  * @author Tero Isannainen <tero.isannainen@gmail.com>
  * @date   Sat Apr 19 10:45:54 EEST 2025
  *
@@ -25,26 +25,41 @@ pl_t pl_alloc_memory( pl_size_t size )
     return calloc( 1, (size_t)size );
 }
 
+
 pl_none pl_free_memory( pl_t mem )
 {
     free( (void*)mem );
 }
+
 
 pl_t pl_realloc_memory( pl_t mem, pl_size_t size )
 {
     return realloc( (void*)mem, (size_t)size );
 }
 
-char* pl_strdup( const char* str )
+
+plsr_s pl_alloc_plsr( plsr_s plsr )
+{
+    char* str;
+    str = pl_alloc_memory( plsr_length( plsr ) + 1 );
+    memcpy( str, plsr_string( plsr ), plsr_length( plsr ) + 1 );
+    return plsr_from_string_and_length( str, plsr_length( plsr ) );
+}
+
+
+char* pl_alloc_string( const char* str )
 {
     if ( str ) {
-        return strdup( str );
+        plsr_s plsr;
+        plsr = pl_alloc_plsr( plsr_from_string( str ) );
+        return (char*)plsr_string( plsr );
     } else {
         return NULL;
     }
 }
 
-char* pl_format( const char* fmt, ... )
+
+char* pl_format_string( const char* fmt, ... )
 {
     va_list ap;
 
@@ -151,9 +166,9 @@ pl_none plam_use( plam_t plam, pl_t node, pl_size_t size )
 }
 
 
-pl_none plam_use_plam( plam_t plam, plam_t base, pl_size_t size )
+pl_none plam_use_plam( plam_t plam, plam_t host, pl_size_t size )
 {
-    plam_use( plam, plam_get( base, size ), size );
+    plam_use( plam, plam_get( host, size ), size );
 }
 
 
@@ -244,22 +259,36 @@ pl_none plam_put( plam_t plam, pl_size_t size )
 }
 
 
-char* plam_strdup( plam_t plam, const char* str )
+pl_t plam_store( plam_t plam, const pl_t data, pl_size_t size )
+{
+    pl_t mem;
+    mem = plam_get( plam, size );
+    memcpy( mem, data, size );
+    return mem;
+}
+
+
+plsr_s plam_store_plsr( plam_t plam, plsr_s plsr )
+{
+    char* str;
+    str = plam_store( plam, (const pl_t)plsr_string( plsr ), plsr_length( plsr ) + 1 );
+    return plsr_from_string_and_length( str, plsr_length( plsr ) );
+}
+
+
+char* plam_store_string( plam_t plam, const char* str )
 {
     if ( str ) {
-        char*     dup;
-        pl_size_t length;
-        length = strlen( str ) + 1;
-        dup = plam_get( plam, length );
-        strncpy( dup, str, length );
-        return dup;
+        plsr_s plsr;
+        plsr = plam_store_plsr( plam, plsr_from_string( str ) );
+        return (char*)plsr_string( plsr );
     } else {
         return NULL;
     }
 }
 
 
-char* plam_format( plam_t plam, const char* fmt, ... )
+char* plam_format_string( plam_t plam, const char* fmt, ... )
 {
     va_list ap;
 
@@ -377,9 +406,9 @@ pl_none plbm_use( plbm_t plbm, pl_t node, pl_size_t nsize, pl_size_t bsize )
 }
 
 
-pl_none plbm_use_plam( plbm_t plbm, plam_t base, pl_size_t nsize, pl_size_t bsize )
+pl_none plbm_use_plam( plbm_t plbm, plam_t host, pl_size_t nsize, pl_size_t bsize )
 {
-    plbm_use( plbm, plam_get( base, nsize ), nsize, bsize );
+    plbm_use( plbm, plam_get( host, nsize ), nsize, bsize );
 }
 
 
@@ -470,6 +499,12 @@ pl_size_t plbm_nsize( plbm_t plbm )
 pl_size_t plbm_bsize( plbm_t plbm )
 {
     return plbm->bsize;
+}
+
+
+pl_bool_t plbm_is_continuous( plbm_t plbm )
+{
+    return ( plbm->node->prev == NULL && plbm->node->next == NULL );
 }
 
 
@@ -639,9 +674,28 @@ pl_pos_t plcm_store( plcm_t plcm, pl_t data, pl_size_t size )
 }
 
 
+pl_pos_t plcm_store_ptr( plcm_t plcm, pl_t ptraddr )
+{
+    return plcm_store( plcm, ptraddr, sizeof( void* ) );
+}
+
+
+pl_none plcm_store_null( plcm_t plcm )
+{
+    plcm_resize( plcm, plcm->used + sizeof( pl_t ) );
+    plcm_terminate_ptr( plcm );
+}
+
+
 pl_t plcm_ref( plcm_t plcm, pl_pos_t pos )
 {
     return plcm->data + pos;
+}
+
+
+pl_t plcm_ref_ptr( plcm_t plcm, pl_pos_t pos )
+{
+    return plcm->data + pos * sizeof( void* );
 }
 
 
@@ -651,9 +705,35 @@ pl_none plcm_set( plcm_t plcm, pl_pos_t pos, pl_t data, pl_size_t size )
 }
 
 
-pl_none plcm_terminate( plcm_t plcm, pl_size_t size )
+pl_none plcm_remove( plcm_t plcm, pl_pos_t pos, pl_size_t size )
 {
-    memset( plcm->data + plcm->used, 0, size );
+    memmove( plcm->data + pos, plcm->data + pos + size, plcm->used - pos - size );
+    plcm->used -= size;
+}
+
+
+pl_none plcm_insert( plcm_t plcm, pl_pos_t pos, pl_t data, pl_size_t size )
+{
+    memmove( plcm->data + pos + size, plcm->data + pos, plcm->used - pos );
+    plcm->used += size;
+    plcm_set( plcm, pos, data, size );
+}
+
+
+pl_bool_t plcm_terminate( plcm_t plcm, pl_size_t size )
+{
+    if ( plcm->used + size <= plcm->size ) {
+        memset( plcm->data + plcm->used, 0, size );
+        return pl_true;
+    } else {
+        return pl_false;
+    }
+}
+
+
+pl_bool_t plcm_terminate_ptr( plcm_t plcm )
+{
+    return plcm_terminate( plcm, sizeof( void* ) );
 }
 
 
@@ -666,6 +746,12 @@ pl_none plcm_reset( plcm_t plcm )
 pl_size_t plcm_used( plcm_t plcm )
 {
     return plcm->used;
+}
+
+
+pl_size_t plcm_used_ptr( plcm_t plcm )
+{
+    return ( plcm->used / sizeof( void* ) );
 }
 
 
@@ -720,18 +806,37 @@ plcm_t plss_append( plcm_t plcm, plsr_s str )
 }
 
 
-plcm_t plss_append_c( plcm_t plcm, char* str )
+plcm_t plss_append_string( plcm_t plcm, const char* str )
 {
-    return plss_append( plcm, plsr_from_c( str ) );
+    return plss_append( plcm, plsr_from_string( str ) );
 }
 
 
-plcm_t plss_append_ch( plcm_t plcm, char ch )
+plcm_t plss_append_char( plcm_t plcm, char ch )
 {
     char ch_null[ 2 ];
     ch_null[ 0 ] = ch;
     ch_null[ 1 ] = 0;
-    return plss_append( plcm, plsr_from_c_length( ch_null, 1 ) );
+    return plss_append( plcm, plsr_from_string_and_length( ch_null, 1 ) );
+}
+
+
+pl_none plss_remove( plcm_t plcm, pl_pos_t pos, pl_size_t size )
+{
+    memmove( plcm->data + pos, plcm->data + pos + size, plcm->used - pos - size + 1 );
+    plcm->used -= size;
+}
+
+
+pl_none plss_insert( plcm_t plcm, pl_pos_t pos, pl_t data, pl_size_t size )
+{
+    if ( pos >= plcm->used ) {
+        plss_append( plcm, plsr_from_string_and_length( data, size ) );
+    } else {
+        memmove( plcm->data + pos + size, plcm->data + pos, plcm->used - pos + 1 );
+        plcm->used += size;
+        plcm_set( plcm, pos, data, size );
+    }
 }
 
 
@@ -745,32 +850,32 @@ plcm_t plss_set( plcm_t plcm, plsr_s str )
 }
 
 
-plcm_t plss_format( plcm_t plcm, const char* fmt, ... )
+plcm_t plss_format_string( plcm_t plcm, const char* fmt, ... )
 {
     va_list ap;
 
     va_start( ap, fmt );
-    plss_va_format( plcm, fmt, ap );
+    plss_va_format_string( plcm, fmt, ap );
     va_end( ap );
 
     return plcm;
 }
 
 
-plcm_t plss_reformat( plcm_t plcm, const char* fmt, ... )
+plcm_t plss_reformat_string( plcm_t plcm, const char* fmt, ... )
 {
     va_list ap;
 
     plcm_reset( plcm );
     va_start( ap, fmt );
-    plss_va_format( plcm, fmt, ap );
+    plss_va_format_string( plcm, fmt, ap );
     va_end( ap );
 
     return plcm;
 }
 
 
-pl_none plss_va_format( plcm_t plcm, const char* fmt, va_list ap )
+pl_none plss_va_format_string( plcm_t plcm, const char* fmt, va_list ap )
 {
     va_list coap;
 
@@ -813,11 +918,17 @@ plsr_s plss_ref( plcm_t plcm )
 }
 
 
+pl_bool_t plss_is_empty( plcm_t plcm )
+{
+    return ( plcm_used( plcm ) == 0 );
+}
+
+
 /* ------------------------------------------------------------
  * String Referencing:
  */
 
-plsr_s plsr_from_c( const char* str )
+plsr_s plsr_from_string( const char* str )
 {
     plsr_s ret;
     ret.string = str;
@@ -829,7 +940,7 @@ plsr_s plsr_from_c( const char* str )
     return ret;
 }
 
-plsr_s plsr_from_c_length( const char* str, pl_size_t length )
+plsr_s plsr_from_string_and_length( const char* str, pl_size_t length )
 {
     plsr_s ret;
     ret.string = str;

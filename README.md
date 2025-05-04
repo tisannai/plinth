@@ -1,17 +1,19 @@
 # Plinth - Base layer library
 
 Plinth is a base layer library for small to midsize C programming
-projects. Most of the Plinth features are for memory allocations, but
-it also provides facilities for string handling and basic type
-definitions.
+projects. Most of the Plinth features are for memory allocations and
+storage, but it also provides facilities for string handling and basic
+type definitions.
 
 Plinth allows the memory allocators to be nested, i.e. arrangements
-where the nested allocator allocates from the base allocator. Nesting
-provides flexible and efficient memory allocations.
+where the nested allocator allocates from the host (base) allocator.
+Nesting provides flexible and efficient memory allocations. In
+general, pre-existing allocations can be used for allocators.
+Pre-existing allocation can be from stack or from another allocator.
 
 Allocators are used through handles, which are pointers to Allocator
-Structs. Allocators return persistent references, except with the
-Continuous Memory Allocator (details below).
+Descriptors. All allocators return persistent references, except
+the Continuous Memory Allocator (details below).
 
 See Doxygen docs and `plinth.h` for details about Plinth API. Also
 consult the test directory for usage examples.
@@ -22,18 +24,18 @@ consult the test directory for usage examples.
 Plinth defines basic heap memory allocation functions:
 `pl_alloc_memory`, `pl_free_memory`, and `pl_realloc_memory`. These
 are equal to `calloc`, `free,` and `realloc`. Additionally there is
-`pl_strdup` for string duplication and `pl_format` for formatting
-strings to heap allocations. Both `pl_strdup` and `pl_format` results
-must be deallocated with `pl_free_memory`.
+`pl_alloc_string` for string duplication and `pl_format_string` for
+formatting strings to heap allocations. Both `pl_alloc_string` and
+`pl_format_string` results must be deallocated with `pl_free_memory`.
 
 
 ## Arena Memory Allocator
 
 `plam` is the fundamental memory allocator in Plinth. It is an Arena
 type of allocator. `plam` consists of one or more Nodes, which are
-chained as doubly linked list. Each allocation from `plam` is a
-continous chunk of memory from a Node. `plam` can be created from heap
-with `plam_new` and from a pre-existing allocation with `plam_use`
+chained together as a doubly linked list. Each allocation from `plam`
+is a continuous chunk of memory from a Node. `plam` can be created from
+heap with `plam_new` or from a pre-existing allocation with `plam_use`
 (nesting). Heap allocated `plam` has Debt, i.e. it needs to be
 deallocated from heap. If `plam` uses pre-existing allocation (for
 example, from stack or from another `plam`), it does not require a
@@ -50,11 +52,11 @@ deallocation.
            size
 ```
 
-The allocation is performed with `plam_get`. When the current Node run
-out of memory, a new Node is allocated. User can also put back
-allocations with `plam_put`. The deallocations must occur in reverse
-order to the allocations and they have to be annotated with correct
-allocation sizes.
+The allocation is performed with `plam_get`. When the current Node
+runs out of memory, a new Node is allocated (from heap). User can also
+put back allocations with `plam_put`. The deallocations must occur in
+reverse order to the allocations and they have to be annotated with
+the corresponding allocation sizes.
 
 The complete chain of Nodes is deallocated with `plam_del`. `plam_del`
 does real deallocation only when the `plam` Node has Debt. A common
@@ -93,7 +95,7 @@ in the current Node, a new Node is allocated and a block is returned
 from the new Node.
 
 
-## Continous Memory Allocator
+## Continuous Memory Allocator
 
 `plcm` is a Continuous memory allocator. `plcm` can be created to heap
 with `plcm_new` (Debt) or to pre-allocated memory with `plcm_use` (no
@@ -133,13 +135,13 @@ could be achieved with `plcm_terminate`.
 
 `plss` provides a set of functions for storing string data to a
 `plcm`. User can append to existing strings (in `plcm`) with
-`plss_append`, `plss_append_c`, `plss_append_ch`, or with
-`plss_format`.
+`plss_append`, `plss_append_string`, `plss_append_char`, or with
+`plss_format_string`.
 
 The existing string can be replaced with `plss_set` or
-`plss_reformat`.
+`plss_reformat_string`.
 
-The stored string content is retreived with `plss_string` and length
+The stored string content is retrieved with `plss_string` and length
 with `plss_length`.
 
 Each `plss` storage function ensures that the stored string is NULL
@@ -158,6 +160,59 @@ String reference provides an efficient way of examining and
 constructing strings. String references are used by value, which
 allows function call nesting and in overall, more functional style
 programming.
+
+
+## Memory Allocation Strategies
+
+Program performance is often limited by memory bandwidth and latency.
+We want to get the data from the nearest possible cache level. This is
+enabled by minimizing the amount of data in use, promoting data
+locality and laying out the data to consecutive addresses (arrays).
+
+Each allocated data has size and lifetime. The easiest case is when we
+know the maximum data size and the exact lifetime, in advance. The
+most difficult case is when we don't know the data size and the
+lifetime might vary.
+
+Strings, and other array types, needs to be allocated to a continuous
+chunk of memory. This is possible to `plam` when we know the size in
+advance. For unknown sizes, we should use the `plcm`.
+
+Independent objects can be allocated from `plbm`. `plbm` also allows
+efficient and convenient allocation/deallocation sequences, since all
+allocations can be deallocated in any order.
+
+Stack allocations should be used much as possible. However, stack
+allocations should be reserved for small data that is discarded at
+function exit. Recursive functions should not normally make much stack
+allocations. Array of memory from stack can be especially useful for
+the `plcm` allocator. For example, if a string is build within the
+function, the user can allocate from stack an char array. The size is
+adjusted so that the typical string fits into the array. In the rare
+occasion when the stack memory is not enough, the allocation is moved
+to heap automatically by `plcm`. The typical case remains fast.
+
+When the data lifetime exceeds the lifetime of the allocating
+function, the data must be allocated from heap. Also when the size of
+the data is large, we should not allocate from stack and use heap
+instead. Direct heap allocations with `pl_alloc_memory` (i.e.
+`malloc`), should be avoided when possible. A common strategy is to
+first allocated large amount of with `plam` (the host) and then create
+nested allocators to the host. If the allocated objects are
+independent, we can use a `plbm`. If the we need an array, we can use
+a `plcm`. The initial size of `plcm` should be large enough to cover
+the typical use cases. However, if `plcm` is capacity exhausted, the
+allocation is moved to heap. In this case the initial `plcm`
+allocation becomes overhead in the host `plam`.
+
+When data lifetime is equal to the program lifetime, the allocation
+strategy becomes simpler. Temporary string building buffers can be
+created with `plcm` with sufficient initial reservation. Fixed sized
+allocation, which also needs to be deallocated, can be created with a
+`plbm`. Reoccurring allocations can be placed to a `plam` with
+sufficiently large initial size, from which numerous smaller
+allocations can be made from. This helps in avoiding to perform the
+more expensive direct heap allocations (`pl_alloc_memory`).
 
 
 ## Plinth API documentation
