@@ -228,7 +228,15 @@ All functions and their use is visible in tests. Please refer `test`
 directory for testcases.
 
 
-## Building
+## Building and installing
+
+Plinth is built with the `build.sh` script.
+
+Install is performed with `install.sh`. Please, edit the script for
+setting the installation root directory.
+
+
+## Testing
 
 Ceedling based flow is in use:
 
