@@ -172,6 +172,12 @@ pl_none plam_use_plam( plam_t plam, plam_t host, pl_size_t size )
 }
 
 
+pl_none plam_use_plbm( plam_t plam, plbm_t host )
+{
+    plam_use( plam, plbm_get( host ), plbm_node_capacity( host ) );
+}
+
+
 pl_none plam_empty( plam_t plam, pl_size_t size )
 {
     plam->node = NULL;
@@ -488,13 +494,19 @@ pl_none plbm_put( plbm_t plbm, pl_t block )
 }
 
 
-pl_size_t plbm_nsize( plbm_t plbm )
+pl_size_t plbm_node_size( plbm_t plbm )
 {
     return plbm->nsize;
 }
 
 
-pl_size_t plbm_bsize( plbm_t plbm )
+pl_size_t plbm_node_capacity( plbm_t plbm )
+{
+    return plbm->nsize - sizeof( plam_node_s );
+}
+
+
+pl_size_t plbm_block_size( plbm_t plbm )
 {
     return plbm->bsize;
 }

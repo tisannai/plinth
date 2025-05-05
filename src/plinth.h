@@ -414,6 +414,17 @@ pl_none plam_use_plam( plam_t plam, plam_t host, pl_size_t size );
 
 
 /**
+ * @brief Create nested plam inside a plbm (no debt).
+ *
+ * @param    plam   Plam handle for nested.
+ * @param    host   Plbm handle.
+ *
+ * @return None
+ */
+pl_none plam_use_plbm( plam_t plam, plbm_t host );
+
+
+/**
  * @brief Create empty plam.
  *
  * Empty plam is a placeholder with handle setup for allocations.
@@ -637,23 +648,33 @@ pl_none plbm_put( plbm_t plbm, pl_t block );
 
 
 /**
- * @brief Node size.
+ * @brief Return node size.
  *
  * @param    plbm   Plbm handle.
  *
  * @return Node size.
  */
-pl_size_t plbm_nsize( plbm_t plbm );
+pl_size_t plbm_node_size( plbm_t plbm );
 
 
 /**
- * @brief Block size.
+ * @brief Return node capacity.
+ *
+ * @param    plbm   Plbm handle.
+ *
+ * @return Storage capacity.
+ */
+pl_size_t plbm_node_capacity( plbm_t plbm );
+
+
+/**
+ * @brief Return block size.
  *
  * @param    plbm   Plbm handle.
  *
  * @return Block size.
  */
-pl_size_t plbm_bsize( plbm_t plbm );
+pl_size_t plbm_block_size( plbm_t plbm );
 
 
 /**

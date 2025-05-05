@@ -58,8 +58,8 @@ void test_basic( void )
     pl_free_memory( s2 );
 
     plbm_use( &plbm, mem, 124, 8 );
-    TEST_ASSERT_EQUAL( 124, plbm_nsize( &plbm ) );
-    TEST_ASSERT_EQUAL( 8, plbm_bsize( &plbm ) );
+    TEST_ASSERT_EQUAL( 124, plbm_node_size( &plbm ) );
+    TEST_ASSERT_EQUAL( 8, plbm_block_size( &plbm ) );
     plbm_del( &plbm );
 }
 
@@ -69,6 +69,7 @@ void test_plam( void )
     plam_s plam;
     plam_s plam2;
     char   mem[ 1024 ];
+    plbm_s plbm;
     pl_t   m;
     char*  s1;
     char*  s2;
@@ -93,6 +94,24 @@ void test_plam( void )
 
     /* Test plam_use_plam. */
     plam_use( &plam, mem, 1024 );
+    TEST_ASSERT_EQUAL( 0, plam_used( &plam ) );
+    plam_use_plam( &plam2, &plam, 256 );
+    TEST_ASSERT_EQUAL( 256, plam_used( &plam ) );
+    m = plam_get( &plam2, 16 );
+    TEST_ASSERT_EQUAL( 16, plam_used( &plam2 ) );
+    TEST_ASSERT( m != NULL );
+    m = plam_get( &plam2, 16 );
+    TEST_ASSERT_EQUAL( 32, plam_used( &plam2 ) );
+    TEST_ASSERT( m != NULL );
+    plam_put( &plam, 256 );
+    TEST_ASSERT_EQUAL( 0, plam_used( &plam ) );
+    plam_del( &plam );
+    TEST_ASSERT_EQUAL( 0, plam_size( &plam ) );
+
+
+    /* Test plam_use_plbm. */
+    plbm_use( &plbm, mem, 1024, 384 );
+    plam_use_plbm( &plam, &plbm );
     TEST_ASSERT_EQUAL( 0, plam_used( &plam ) );
     plam_use_plam( &plam2, &plam, 256 );
     TEST_ASSERT_EQUAL( 256, plam_used( &plam ) );
