@@ -215,6 +215,32 @@ allocations can be made from. This helps in avoiding to perform the
 more expensive direct heap allocations (`pl_alloc_memory`).
 
 
+## Other features
+
+Plinth defines macros for making type definitions simple and
+consistent. Simple types are defined with `pl_type`:
+
+    pl_type( int8_t, pl_i8 );
+
+This creates the type `pl_i8_t` which is equal to `int8_t`.
+Additionally a pointer type `pl_i8_p` is created, which equals to
+`int8_t*`.
+
+Struct types are created with `pl_struct`. For example:
+
+    `pl_struct( point )`
+
+will create `pl_struct_s`, `pl_struct_t`, and `pl_struct_p` types. The
+`_s` type is the struct itself. `_t` is pointer to the struct, and
+`_p` is pointer to the pointer of struct. The base type is considered
+to be `_t`, which is aligned with the simple type above. Structs are
+typically referenced through a pointer, and therefore `_t` makes sense
+as the default type. When struct style objects are collected into a
+collection, we need the `_p` type index the collection.
+
+`pl_enum` creates enumeration types.
+
+
 ## Plinth API documentation
 
 See Doxygen documentation. Documentation can be created with:
@@ -259,4 +285,3 @@ are not in GIT. These can be added by executing:
 
 in the directory above Plinth. Ceedling prompts for file
 overwrites. You should answer NO in order to use the customized files.
-

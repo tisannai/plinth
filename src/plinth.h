@@ -188,15 +188,15 @@ pl_struct( pl_ui )
     pl_t    env; /**< Object. */
 };
 
-/* Align size (up) to multiple of alignment. */
-#define PLINTH_ALIGN_TO( size, alignment ) \
-    ( ( ( ( size ) + ( alignment ) - 1 ) / ( alignment ) ) * ( alignment ) )
-
 
 
 /* ------------------------------------------------------------
  * Memory allocation.
  */
+
+/* Align size (up) to multiple of alignment. */
+#define PLINTH_ALIGN_TO( size, alignment ) \
+    ( ( ( ( size ) + ( alignment ) - 1 ) / ( alignment ) ) * ( alignment ) )
 
 /**
  * Arena Memory Allocator Descriptor.

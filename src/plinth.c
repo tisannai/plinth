@@ -174,7 +174,7 @@ pl_none plam_use_plam( plam_t plam, plam_t host, pl_size_t size )
 
 pl_none plam_use_plbm( plam_t plam, plbm_t host )
 {
-    plam_use( plam, plbm_get( host ), plbm_node_capacity( host ) );
+    plam_use( plam, plbm_get( host ), plbm_block_size( host ) );
 }
 
 

@@ -60,6 +60,7 @@ void test_basic( void )
     plbm_use( &plbm, mem, 124, 8 );
     TEST_ASSERT_EQUAL( 124, plbm_node_size( &plbm ) );
     TEST_ASSERT_EQUAL( 8, plbm_block_size( &plbm ) );
+    TEST_ASSERT_EQUAL( 124-sizeof(plam_node_s), plbm_node_capacity( &plbm ) );
     plbm_del( &plbm );
 }
 
