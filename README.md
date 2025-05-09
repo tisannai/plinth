@@ -238,7 +238,30 @@ typically referenced through a pointer, and therefore `_t` makes sense
 as the default type. When struct style objects are collected into a
 collection, we need the `_p` type index the collection.
 
-`pl_enum` creates enumeration types.
+`pl_enum` creates enumeration types. Plinth has it's own boolean type
+defines as:
+
+    pl_enum( pl_bool ){ pl_false = 0, pl_true = 1 };
+
+Apart from type definitions, Plinth defines an Universal Interface. It
+is universal in the sense, that it can be used in any context,
+technically. The interface is capture as struct called `pl_ui`, which
+includes two members: `fun` and `env`. `fun` is called by the
+interface master to communicate with the interface slave. The `env` is
+used as permanent context for communication. The `fun` method is
+declared as:
+
+    typedef pl_none ( *pl_ui_f )( pl_t env, pl_t argi, pl_t argo );
+
+The master passes request towards the slave through `argi` and
+receives an response through `argo`. The interface is used by
+performing:
+
+    pl_ui_do( ui, argi, argo );
+
+from the master side. While the interface is universal, the
+communicating parties are, obviously, required to agree on the
+communication content details in advance.
 
 
 ## Plinth API documentation

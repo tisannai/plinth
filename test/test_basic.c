@@ -60,7 +60,7 @@ void test_basic( void )
     plbm_use( &plbm, mem, 124, 8 );
     TEST_ASSERT_EQUAL( 124, plbm_node_size( &plbm ) );
     TEST_ASSERT_EQUAL( 8, plbm_block_size( &plbm ) );
-    TEST_ASSERT_EQUAL( 124-sizeof(plam_node_s), plbm_node_capacity( &plbm ) );
+    TEST_ASSERT_EQUAL( 124 - sizeof( plam_node_s ), plbm_node_capacity( &plbm ) );
     plbm_del( &plbm );
 }
 
@@ -479,4 +479,24 @@ void test_plsr( void )
     sr = plsr_invalid();
     TEST_ASSERT_EQUAL( pl_true, plsr_is_invalid( sr ) );
     TEST_ASSERT_EQUAL( pl_false, plsr_is_valid( sr ) );
+}
+
+
+
+pl_none ui_echo( pl_t env, pl_t argi, pl_t argo )
+{
+    *( (char**)argo ) = (char*)argi;
+}
+
+
+void test_ui( void )
+{
+    pl_ui_s ui;
+    char*   msg_out;
+    char*   msg_in;
+
+    pl_ui_init( &ui, NULL, ui_echo );
+    msg_out = "hello";
+    pl_ui_do( &ui, msg_out, &msg_in );
+    TEST_ASSERT( strcmp( msg_out, msg_in ) == 0 );
 }

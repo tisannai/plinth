@@ -131,39 +131,6 @@ pl_type( uint64_t, pl_id );   /**< Identification number type. */
 
 
 /* ------------------------------------------------------------
- * Standards loops.
- */
-
-/** Forever loop. */
-#define pl_loop for ( ;; )
-
-/** For n-times loop. Loop counter is 'i'. */
-#define pl_for_n( n ) for ( int i = 0; i < ( n ); i++ )
-
-/** For n-times loop. Loop counter is <x>. */
-#define pl_for_n_x( n, x ) for ( int( x ) = 0; ( x ) < ( n ); ( x )++ )
-
-
-
-/* ------------------------------------------------------------
- * Standard streams.
- */
-
-#ifndef pl_stdin
-#    define pl_stdin stdin
-#endif
-
-#ifndef pl_stdout
-#    define pl_stdout stdout
-#endif
-
-#ifndef pl_stderr
-#    define pl_stderr stderr
-#endif
-
-
-
-/* ------------------------------------------------------------
  * Miscellaneous.
  */
 
@@ -184,9 +151,29 @@ typedef pl_none ( *pl_ui_f )( pl_t env, pl_t argi, pl_t argo );
  */
 pl_struct( pl_ui )
 {
-    pl_ui_f fun; /**< Object method. */
-    pl_t    env; /**< Object. */
+    pl_t    env; /**< Environment. */
+    pl_ui_f fun; /**< Method. */
 };
+
+
+/**
+ * @brief Initialize ui structure.
+ *
+ * @param      ui   UI, Universal Interface.
+ * @param      env  Environment for UI.
+ * @param      fun  Method for UI.
+ */
+pl_none pl_ui_init( pl_ui_t ui, pl_t env, pl_ui_f fun );
+
+
+/**
+ * @brief Use Universal Interface.
+ *
+ * @param    ui    UI, Universal Interface.
+ * @param    argi  Input argument, opaque pointer.
+ * @param    argo  Output argument (response), opaque pointer.
+ */
+pl_none pl_ui_do( pl_ui_t ui, pl_t argi, pl_t argo );
 
 
 

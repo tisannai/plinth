@@ -17,6 +17,23 @@
 
 
 /* ------------------------------------------------------------
+ * Universal Interface:
+ */
+
+pl_none pl_ui_init( pl_ui_t ui, pl_t env, pl_ui_f fun )
+{
+    ui->env = env;
+    ui->fun = fun;
+}
+
+
+pl_none pl_ui_do( pl_ui_t ui, pl_t argi, pl_t argo )
+{
+    ui->fun( ui->env, argi, argo );
+}
+
+
+/* ------------------------------------------------------------
  * Basic (heap) memory allocation:
  */
 
