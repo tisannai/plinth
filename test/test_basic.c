@@ -476,9 +476,8 @@ void test_plsr( void )
     sr = plsr_from_string( s2 );
     TEST_ASSERT_EQUAL( pl_false, plsr_compare_n( sr, plsr_from_string( s1 ), 8 ) );
 
-    sr = plsr_invalid();
-    TEST_ASSERT_EQUAL( pl_true, plsr_is_invalid( sr ) );
-    TEST_ASSERT_EQUAL( pl_false, plsr_is_valid( sr ) );
+    sr = plsr_null();
+    TEST_ASSERT_EQUAL( pl_true, plsr_is_null( sr ) );
 }
 
 

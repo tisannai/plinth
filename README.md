@@ -157,9 +157,9 @@ since it contains the explicit length and does not require the NULL
 terminator.
 
 String reference provides an efficient way of examining and
-constructing strings. String references are used by value, which
-allows function call nesting and in overall, more functional style
-programming.
+constructing strings. String references are used by value, i.e. the
+`plsr` struct is copied from caller to callee. This allows function
+call nesting and in overall, more functional style of programming.
 
 
 ## Memory Allocation Strategies

@@ -1201,31 +1201,21 @@ pl_bool_t plsr_compare_n( plsr_s p1, plsr_s p2, pl_size_t n );
 
 
 /**
- * @brief Create an invalid plsr.
+ * @brief Create a null plsr.
  *
  * @return  Plsr handle.
  */
-plsr_s plsr_invalid( pl_none );
+plsr_s plsr_null( pl_none );
 
 
 /**
- * @brief Is plsr invalid?
+ * @brief Is plsr null?
  *
  * @param    plsr   Plsr handle.
  *
- * @return True, if plsr is invalid.
+ * @return True, if plsr is null.
  */
-pl_bool_t plsr_is_invalid( plsr_s plsr );
-
-
-/**
- * @brief Is plsr valid?
- *
- * @param    plsr   Plsr handle.
- *
- * @return True, if plsr is valid.
- */
-pl_bool_t plsr_is_valid( plsr_s plsr );
+pl_bool_t plsr_is_null( plsr_s plsr );
 
 
 #endif

@@ -1016,7 +1016,7 @@ pl_bool_t plsr_compare_n( plsr_s p1, plsr_s p2, pl_size_t n )
 }
 
 
-plsr_s plsr_invalid( pl_none )
+plsr_s plsr_null( pl_none )
 {
     plsr_s ret;
     ret.string = NULL;
@@ -1025,13 +1025,7 @@ plsr_s plsr_invalid( pl_none )
 }
 
 
-pl_bool_t plsr_is_invalid( plsr_s plsr )
+pl_bool_t plsr_is_null( plsr_s plsr )
 {
     return ( plsr.string == NULL );
-}
-
-
-pl_bool_t plsr_is_valid( plsr_s plsr )
-{
-    return ( plsr.string != NULL );
 }
