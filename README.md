@@ -34,12 +34,12 @@ formatting strings to heap allocations. Both `pl_alloc_string` and
 `plam` is the fundamental memory allocator in Plinth. It is an Arena
 type of allocator. `plam` consists of one or more Nodes, which are
 chained together as a doubly linked list. Each allocation from `plam`
-is a continuous chunk of memory from a Node. `plam` can be created from
-heap with `plam_new` or from a pre-existing allocation with `plam_use`
-(nesting). Heap allocated `plam` has Debt, i.e. it needs to be
-deallocated from heap. If `plam` uses pre-existing allocation (for
-example, from stack or from another `plam`), it does not require a
-deallocation.
+is a continuous chunk of memory from a Node. `plam` can be created
+from heap with `plam_new` (Dept) or from a pre-existing allocation
+with `plam_use` (no Dept). Heap allocated `plam` has Debt, i.e. it
+needs to be deallocated from heap. If `plam` uses pre-existing
+allocation (for example, from stack or from another `plam`), it does
+not require a deallocation.
 
 ```
            plam_node_s
@@ -92,7 +92,8 @@ A block of memory is allocated with `plbm_get` and deallocated with
 free-block-chain, which is used as priority for every new block
 allocation. When there are no blocks in the chain or available blocks
 in the current Node, a new Node is allocated and a block is returned
-from the new Node.
+from the new Node. The blocks are returned in order, and therefore it
+is possible for user to get continuous memory.
 
 
 ## Continuous Memory Allocator
@@ -118,7 +119,8 @@ can change the location of the allocation, and therefore all direct
 references to memory become invalid. For this reason, references to
 allocations are by default offsets to base address. The offsets are
 called Positions. When Position is used, it is added to the current
-base address and resulting references are valid.
+base address and therefore the resulting references are up-to-date and
+valid.
 
 Allocations can be made with `plcm_get_pos`, where the return value is
 a Position to the allocator. Other possibility is `plcm_get_ref`,
@@ -129,6 +131,11 @@ may also allocate and store the value in one action with
 If the continuous data storage requires a terminating value,
 `plcm_terminate` can be used. For example, a NULL terminated array
 could be achieved with `plcm_terminate`.
+
+`plcm` may contain multiple allocations, but typically there is only
+one allocation, which changes its size. The only allocation that can
+change its size in `plcm` is the last. Only allocation is also the
+last.
 
 
 ## String Storage
@@ -175,10 +182,10 @@ most difficult case is when we don't know the data size and the
 lifetime might vary.
 
 Strings, and other array types, needs to be allocated to a continuous
-chunk of memory. This is possible to `plam` when we know the size in
-advance. For unknown sizes, we should use the `plcm`.
+chunk of memory. This is possible with `plam`, when we know the size
+in advance. For unknown sizes, we should use the `plcm`.
 
-Independent objects can be allocated from `plbm`. `plbm` also allows
+Independent objects can be allocated from `plbm`. `plbm` allows also
 efficient and convenient allocation/deallocation sequences, since all
 allocations can be deallocated in any order.
 
@@ -190,7 +197,8 @@ the `plcm` allocator. For example, if a string is build within the
 function, the user can allocate from stack an char array. The size is
 adjusted so that the typical string fits into the array. In the rare
 occasion when the stack memory is not enough, the allocation is moved
-to heap automatically by `plcm`. The typical case remains fast.
+to heap automatically by `plcm`. The typical case remains fast, since
+no heap allocation is made.
 
 When the data lifetime exceeds the lifetime of the allocating
 function, the data must be allocated from heap. Also when the size of
@@ -201,18 +209,24 @@ first allocated large amount of with `plam` (the host) and then create
 nested allocators to the host. If the allocated objects are
 independent, we can use a `plbm`. If the we need an array, we can use
 a `plcm`. The initial size of `plcm` should be large enough to cover
-the typical use cases. However, if `plcm` is capacity exhausted, the
+the typical use cases. However, if `plcm` capacity is exhausted, the
 allocation is moved to heap. In this case the initial `plcm`
 allocation becomes overhead in the host `plam`.
 
 When data lifetime is equal to the program lifetime, the allocation
-strategy becomes simpler. Temporary string building buffers can be
-created with `plcm` with sufficient initial reservation. Fixed sized
+strategy becomes simpler. It really doesn't matter how memory is
+allocated.
+
+Temporary string building buffers can be created with `plcm`. The
+initial reservation should be sufficiently large. Fixed sized
 allocation, which also needs to be deallocated, can be created with a
 `plbm`. Reoccurring allocations can be placed to a `plam` with
 sufficiently large initial size, from which numerous smaller
 allocations can be made from. This helps in avoiding to perform the
-more expensive direct heap allocations (`pl_alloc_memory`).
+more expensive direct heap allocations (`pl_alloc_memory`). When data
+lifetime is aligned with the function call stack, we can use `plam` as
+a stack data structure which is directly synced with the called
+functions.
 
 
 ## Other features
