@@ -134,7 +134,11 @@ pl_type( uint64_t, pl_id );   /**< Identification number type. */
  * Miscellaneous.
  */
 
-inline pl_none pl_dummy( pl_none ) {}
+/**
+ * Dummy function.
+ */
+extern pl_none pl_dummy( pl_none );
+
 
 /**
  * Universal Interface method.
@@ -145,6 +149,7 @@ inline pl_none pl_dummy( pl_none ) {}
  *
  */
 typedef pl_none ( *pl_ui_f )( pl_t env, pl_t argi, pl_t argo );
+
 
 /**
  * Universal Interface.
@@ -185,6 +190,11 @@ pl_none pl_ui_do( pl_ui_t ui, pl_t argi, pl_t argo );
 #define PLINTH_ALIGN_TO( size, alignment ) \
     ( ( ( ( size ) + ( alignment ) - 1 ) / ( alignment ) ) * ( alignment ) )
 
+
+/** Allocator affinity type. */
+pl_enum( pl_aa ){ PL_AA_SELF = 0, PL_AA_HEAP, PL_AA_PLAM, PL_AA_PLBM, PL_AA_PLCM };
+
+
 /**
  * Arena Memory Allocator Descriptor.
  *
@@ -200,16 +210,19 @@ pl_none pl_ui_do( pl_ui_t ui, pl_t argi, pl_t argo );
 pl_struct_type( plam_node );
 pl_struct_body( plam_node )
 {
-    plam_node_t prev;      /**< Previous node. */
-    plam_node_t next;      /**< Next node. */
-    pl_size_t   used;      /**< Used count for data. */
-    pl_bool_t   debt;      /**< Reservation debt? */
-    uint8_t     data[ 0 ]; /**< Data. */
+    plam_node_t prev;  /**< Previous node. */
+    plam_node_t next;  /**< Next node. */
+    pl_size_t   used;  /**< Used count for data. */
+                       //     pl_bool_t   debt;      /**< Reservation debt? */
+                       //     pl_aa_t   type;      /**< Reservation type. */
+    uint8_t data[ 0 ]; /**< Data. */
 };
 pl_struct( plam )
 {
     plam_node_t node; /**< Current node. */
     pl_size_t   size; /**< Node size. */
+    pl_aa_t     type; /**< Reservation type. */
+    pl_t        ator; /**< Allocator. */
 };
 
 
@@ -230,6 +243,8 @@ pl_struct( plbm )
     pl_size_t   nsize; /**< Node size. */
     pl_size_t   bsize; /**< Block size. */
     pl_size_t   itail; /**< Init tail count. */
+    pl_aa_t     type;  /**< Reservation type. */
+    pl_t        ator;  /**< Allocator. */
 };
 
 
@@ -259,7 +274,7 @@ pl_struct( plcm )
  *     text_---
  *     '--'
  *       \
-*         length
+ *        length
  */
 pl_struct( plsr )
 {
@@ -377,7 +392,7 @@ pl_none plam_new( plam_t plam, pl_size_t size );
 
 
 /**
- * @brief Create plam to node (no debt).
+ * @brief Initiate plam to node (no debt).
  *
  * @param    plam   Plam handle.
  * @param    node   Node.
@@ -389,9 +404,9 @@ pl_none plam_use( plam_t plam, pl_t node, pl_size_t size );
 
 
 /**
- * @brief Create nested plam inside a plam (no debt).
+ * @brief Initiate nested plam from plam (no debt).
  *
- * @param    plam   Plam handle for nested.
+ * @param    plam   Plam handle of nested.
  * @param    host   Plam handle.
  * @param    size   Node size.
  *
@@ -401,14 +416,37 @@ pl_none plam_use_plam( plam_t plam, plam_t host, pl_size_t size );
 
 
 /**
- * @brief Create nested plam inside a plbm (no debt).
+ * @brief Initiate nested plam from plbm (no debt).
  *
- * @param    plam   Plam handle for nested.
+ * @param    plam   Plam handle of nested.
  * @param    host   Plbm handle.
  *
  * @return None
  */
 pl_none plam_use_plbm( plam_t plam, plbm_t host );
+
+
+/**
+ * @brief Deploy plam inside plam (debt).
+ *
+ * @param    plam   Plam handle of nested.
+ * @param    host   Plam handle.
+ * @param    size   Node size.
+ *
+ * @return None
+ */
+pl_none plam_into_plam( plam_t plam, plam_t host, pl_size_t size );
+
+
+/**
+ * @brief Deploy plam inside plbm (debt).
+ *
+ * @param    plam   Plam handle of nested.
+ * @param    host   Plbm handle.
+ *
+ * @return None
+ */
+pl_none plam_into_plbm( plam_t plam, plbm_t host );
 
 
 /**
@@ -519,6 +557,16 @@ pl_size_t plam_used( plam_t plam );
 
 
 /**
+ * @brief Free memory in current node.
+ *
+ * @param    plam   Plam handle.
+ *
+ * @return Free memory.
+ */
+pl_size_t plam_free( plam_t plam );
+
+
+/**
  * @brief Node size.
  *
  * @param    plam   Plam handle.
@@ -556,7 +604,7 @@ pl_none plbm_new( plbm_t plbm, pl_size_t nsize, pl_size_t bsize );
 
 
 /**
- * @brief Create plbm to node (no debt).
+ * @brief Initiate plbm to node (no debt).
  *
  * @param    plbm   Plbm handle.
  * @param    node   Node.
@@ -569,9 +617,9 @@ pl_none plbm_use( plbm_t plbm, pl_t node, pl_size_t nsize, pl_size_t bsize );
 
 
 /**
- * @brief Create nested plbm inside a plam (no debt).
+ * @brief Initiate nested plbm from plam (no debt).
  *
- * @param    plbm   Plbm handle for nested.
+ * @param    plbm   Plbm handle of nested.
  * @param    host   Plam handle.
  * @param    nsize  Node size.
  * @param    bsize  Block size.
@@ -579,6 +627,48 @@ pl_none plbm_use( plbm_t plbm, pl_t node, pl_size_t nsize, pl_size_t bsize );
  * @return None
  */
 pl_none plbm_use_plam( plbm_t plbm, plam_t host, pl_size_t nsize, pl_size_t bsize );
+
+
+/**
+ * @brief Initiate nested plbm from plbm (no debt).
+ *
+ * Node size is inherited from host block size.
+ *
+ * @param    plbm   Plbm handle of nested.
+ * @param    host   Plbm handle.
+ * @param    nsize  Node size.
+ * @param    bsize  Block size.
+ *
+ * @return None
+ */
+pl_none plbm_use_plbm( plbm_t plbm, plbm_t host, pl_size_t bsize );
+
+
+/**
+ * @brief Deploy plbm inside plam (debt).
+ *
+ * @param    plbm   Plbm handle of nested.
+ * @param    host   Plam handle.
+ * @param    nsize  Node size.
+ * @param    bsize  Block size.
+ *
+ * @return None
+ */
+pl_none plbm_into_plam( plbm_t plbm, plam_t host, pl_size_t nsize, pl_size_t bsize );
+
+
+/**
+ * @brief Deploy plbm inside plbm (debt).
+ *
+ * Node size is inherited from host block size.
+ *
+ * @param    plbm   Plbm handle of nested.
+ * @param    host   Plbm handle.
+ * @param    bsize  Block size.
+ *
+ * @return None
+ */
+pl_none plbm_into_plbm( plbm_t plbm, plbm_t host, pl_size_t bsize );
 
 
 /**
@@ -717,7 +807,7 @@ pl_none plcm_use( plcm_t plcm, pl_t mem, pl_size_t size );
 /**
  * @brief Create nested plcm inside a plam (no debt).
  *
- * @param    plcm   Plcm handle for nested.
+ * @param    plcm   Plcm handle of nested.
  * @param    host   Plam handle.
  * @param    size   Allocation size.
  *

@@ -259,11 +259,12 @@ defines as:
 
 Apart from type definitions, Plinth defines an Universal Interface. It
 is universal in the sense, that it can be used in any context,
-technically. The interface is capture as struct called `pl_ui`, which
-includes two members: `fun` and `env`. `fun` is called by the
-interface master to communicate with the interface slave. The `env` is
-used as permanent context for communication. The `fun` method is
-declared as:
+technically. Universal Interface is useful in situations where we have
+to commit to a mechanism, but we don't have much use cases available.
+The interface is captured as struct called `pl_ui`, which includes two
+members: `fun` and `env`. `fun` is called by the interface master to
+communicate with the interface slave. The `env` is used as permanent
+context for communication. The `fun` method is declared as:
 
     typedef pl_none ( *pl_ui_f )( pl_t env, pl_t argi, pl_t argo );
 

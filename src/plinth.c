@@ -16,6 +16,225 @@
 #include "plinth.h"
 
 
+
+static pl_none plam__node_init( plam_node_t node )
+{
+    if ( node ) {
+        node->prev = NULL;
+        node->next = NULL;
+        node->used = 0;
+    }
+}
+
+static pl_none plam__use_type( plam_t      plam,
+                               plam_node_t node,
+                               pl_size_t   size,
+                               pl_aa_t     type,
+                               pl_t        ator )
+{
+    plam->node = node;
+    plam->size = size;
+    plam->type = type;
+    plam->ator = ator;
+    plam__node_init( node );
+}
+
+static pl_t plam__node_allocate( pl_size_t size, pl_aa_t type, pl_t ator )
+{
+    plam_node_t node;
+
+    switch ( type ) {
+        case PL_AA_SELF:
+            node = pl_alloc_memory( size );
+            break;
+        case PL_AA_HEAP:
+            node = pl_alloc_memory( size );
+            break;
+        case PL_AA_PLAM:
+            node = plam_get( (plam_t)ator, size );
+            break;
+        case PL_AA_PLBM:
+            node = plbm_get( (plbm_t)ator );
+            break;
+        // GCOV_EXCL_START
+        default:
+            node = NULL;
+            break;
+            // GCOV_EXCL_STOP
+    }
+
+    plam__node_init( node );
+
+    return node;
+}
+
+static plam_node_t plam__node_del( plam_node_t node, pl_size_t size, pl_aa_t type, pl_t ator )
+{
+    //     if ( node ) {
+    //
+    //         plam_node_t left;
+    //         plam_node_t right;
+    //         plam_node_t cur;
+    //
+    //         left = node->prev;
+    //         right = node;
+    //
+    //         while ( right ) {
+    //             cur = right;
+    //             right = right->next;
+    //             if ( cur->type == PL_AA_HEAP ) {
+    //                 pl_free_memory( cur );
+    //             }
+    //         }
+    //
+    //         while ( left ) {
+    //             cur = left;
+    //             left = left->prev;
+    //             if ( cur->type == PL_AA_HEAP ) {
+    //                 pl_free_memory( cur );
+    //             }
+    //         }
+    //     }
+
+    if ( node ) {
+
+        plam_node_t left;
+        plam_node_t right;
+        plam_node_t cur;
+
+        left = node;
+        right = node->next;
+
+        switch ( type ) {
+            case PL_AA_SELF:
+                while ( right ) {
+                    cur = right;
+                    right = right->next;
+                    pl_free_memory( cur );
+                }
+                while ( left->prev ) {
+                    cur = left;
+                    left = left->prev;
+                    pl_free_memory( cur );
+                }
+                break;
+            case PL_AA_HEAP:
+                while ( right ) {
+                    cur = right;
+                    right = right->next;
+                    pl_free_memory( cur );
+                }
+                while ( left ) {
+                    cur = left;
+                    left = left->prev;
+                    pl_free_memory( cur );
+                }
+                break;
+            case PL_AA_PLAM:
+                while ( left->next ) {
+                    left = left->next;
+                }
+                while ( left ) {
+                    cur = left;
+                    left = left->prev;
+                    plam_put( (plam_t)ator, size );
+                }
+                break;
+            case PL_AA_PLBM:
+                while ( right ) {
+                    cur = right;
+                    right = right->next;
+                    plbm_put( (plbm_t)ator, cur );
+                }
+                while ( left ) {
+                    cur = left;
+                    left = left->prev;
+                    plbm_put( (plbm_t)ator, cur );
+                }
+                break;
+            // GCOV_EXCL_START
+            default:
+                node = NULL;
+                break;
+                // GCOV_EXCL_STOP
+        }
+    }
+
+    return NULL;
+}
+
+
+
+static pl_bool_t plbm__is_valid( pl_size_t nsize, pl_size_t bsize )
+{
+    if ( ( nsize > sizeof( plam_node_s ) + bsize ) && bsize >= sizeof( pl_t ) ) {
+        return pl_true;
+    } else {
+        return pl_false;
+    }
+}
+
+static pl_size_t plbm__itail( plbm_t plbm )
+{
+    return PLINTH_ALIGN_TO( plbm->nsize - sizeof( plam_node_s ), plbm->bsize ) / plbm->bsize;
+}
+
+static pl_none plbm__use_type( plbm_t      plbm,
+                               plam_node_t node,
+                               pl_size_t   nsize,
+                               pl_size_t   bsize,
+                               pl_aa_t     type,
+                               pl_t        ator )
+{
+    plbm->node = node;
+    plbm->head = NULL;
+    plbm->nsize = nsize;
+    plbm->bsize = bsize;
+    plbm->type = type;
+    plbm->ator = ator;
+    plam__node_init( node );
+    if ( plbm__is_valid( nsize, bsize ) ) {
+        plbm->itail = plbm__itail( plbm );
+    } else {
+        plbm->node = NULL;
+        plbm->nsize = nsize;
+        plbm->bsize = bsize;
+        plbm->itail = 0;
+    }
+}
+
+static pl_none plbm__invalid( plbm_t plbm )
+{
+    plbm__use_type( plbm, NULL, 0, 0, PL_AA_SELF, NULL );
+}
+
+
+
+static pl_none plcm__init( plcm_t plcm )
+{
+    plcm->size = 0;
+    plcm->used = 0;
+    plcm->data = NULL;
+    plcm->debt = pl_false;
+}
+
+
+
+static pl_none plss_terminate( plcm_t plcm )
+{
+    *( (char*)( plcm->data + plcm->used ) ) = 0;
+}
+
+
+
+/* ------------------------------------------------------------
+   -------------------------- PUBLIC --------------------------
+   ------------------------------------------------------------ */
+
+
+pl_none pl_dummy( pl_none ) {}
+
+
 /* ------------------------------------------------------------
  * Universal Interface:
  */
@@ -31,6 +250,8 @@ pl_none pl_ui_do( pl_ui_t ui, pl_t argi, pl_t argo )
 {
     ui->fun( ui->env, argi, argo );
 }
+
+
 
 
 /* ------------------------------------------------------------
@@ -113,85 +334,58 @@ char* pl_format_string( const char* fmt, ... )
 
 
 
+
 /* ------------------------------------------------------------
  * Arena Memory Allocator:
  */
 
-static pl_none plam_node_init( plam_node_t node, pl_bool_t debt )
-{
-    node->prev = NULL;
-    node->next = NULL;
-    node->used = 0;
-    node->debt = debt;
-}
-
-
-static plam_node_t plam_node_del( plam_node_t node )
-{
-    if ( node ) {
-
-        plam_node_t left;
-        plam_node_t right;
-        plam_node_t cur;
-
-        left = node->prev;
-        right = node;
-
-        while ( right ) {
-            cur = right;
-            right = right->next;
-            if ( cur->debt ) {
-                pl_free_memory( cur );
-            }
-        }
-
-        while ( left ) {
-            cur = left;
-            left = left->prev;
-            if ( cur->debt ) {
-                pl_free_memory( cur );
-            }
-        }
-    }
-
-    return NULL;
-}
-
-
 pl_none plam_new( plam_t plam, pl_size_t size )
 {
     if ( size > sizeof( plam_node_s ) ) {
-        plam->node = pl_alloc_memory( size );
-        if ( plam->node ) {
-            plam_node_init( plam->node, pl_true );
-            plam->size = size;
-        } else {
+
+        plam->size = size;
+        plam->type = PL_AA_HEAP;
+        plam->ator = NULL;
+        plam->node = plam__node_allocate( plam->size, plam->type, plam->ator );
+
+        if ( plam->node == NULL ) {
             plam->size = 0; // GCOV_EXCL_LINE
         }
+
     } else {
-        plam->node = NULL;
-        plam->size = 0;
+
+        plam_empty( plam, 0 );
     }
 }
 
 
 pl_none plam_use( plam_t plam, pl_t node, pl_size_t size )
 {
-    plam->node = node;
-    plam->size = size;
-    plam_node_init( node, pl_false );
+    plam__use_type( plam, node, size, PL_AA_SELF, NULL );
 }
 
 
 pl_none plam_use_plam( plam_t plam, plam_t host, pl_size_t size )
 {
-    plam_use( plam, plam_get( host, size ), size );
+    plam__use_type( plam, plam_get( host, size ), size, PL_AA_SELF, NULL );
 }
 
 
 pl_none plam_use_plbm( plam_t plam, plbm_t host )
 {
-    plam_use( plam, plbm_get( host ), plbm_block_size( host ) );
+    plam__use_type( plam, plbm_get( host ), plbm_block_size( host ), PL_AA_SELF, NULL );
+}
+
+
+pl_none plam_into_plam( plam_t plam, plam_t host, pl_size_t size )
+{
+    plam__use_type( plam, plam_get( host, size ), size, PL_AA_PLAM, host );
+}
+
+
+pl_none plam_into_plbm( plam_t plam, plbm_t host )
+{
+    plam__use_type( plam, plbm_get( host ), plbm_block_size( host ), PL_AA_PLBM, host );
 }
 
 
@@ -199,13 +393,15 @@ pl_none plam_empty( plam_t plam, pl_size_t size )
 {
     plam->node = NULL;
     plam->size = size;
+    plam->type = PL_AA_SELF;
+    plam->ator = NULL;
 }
 
 
 pl_none plam_del( plam_t plam )
 {
-    plam->node = plam_node_del( plam->node );
-    plam->size = 0;
+    plam->node = plam__node_del( plam->node, plam->size, plam->type, plam->ator );
+    plam_empty( plam, 0 );
 }
 
 
@@ -217,44 +413,45 @@ pl_t plam_get( plam_t plam, pl_size_t size )
     }
 
     if ( plam->node == NULL ) {
-        plam->node = pl_alloc_memory( plam->size );
+        // plam->node = pl_alloc_memory( plam->size );
+        plam->node = plam__node_allocate( plam->size, plam->type, plam->ator );
         if ( plam->node == NULL ) {
             // GCOV_EXCL_START
             return NULL;
             // GCOV_EXCL_STOP
         }
-        plam_node_init( plam->node, pl_true );
+        // plam__node_init( plam->node, pl_true );
     }
-
-    pl_size_t free;
 
     while ( 1 ) {
 
-        free = plam->size - sizeof( plam_node_s ) - plam->node->used;
-
-        if ( free < size ) {
+        if ( plam_free( plam ) < size ) {
 
             if ( plam->node->next ) {
 
+                /* Advance to next node and retry. */
                 plam->node = plam->node->next;
 
             } else {
 
                 /* Allocate new node. */
                 plam_node_t node;
-                node = pl_alloc_memory( plam->size );
+                // node = pl_alloc_memory( plam->size );
+                node = plam__node_allocate( plam->size, plam->type, plam->ator );
                 if ( node == NULL ) {
                     // GCOV_EXCL_START
                     return NULL;
                     // GCOV_EXCL_STOP
                 }
-                plam_node_init( node, pl_true );
+                // plam__node_init( node, pl_true );
                 plam->node->next = node;
                 node->prev = plam->node;
                 plam->node = node;
                 break;
             }
+
         } else {
+
             break;
         }
     }
@@ -351,6 +548,16 @@ pl_size_t plam_used( plam_t plam )
 }
 
 
+pl_size_t plam_free( plam_t plam )
+{
+    if ( plam->node ) {
+        return plam->size - sizeof( plam_node_s ) - plam->node->used;
+    } else {
+        return 0;
+    }
+}
+
+
 pl_size_t plam_size( plam_t plam )
 {
     return plam->size;
@@ -368,103 +575,74 @@ pl_bool_t plam_is_empty( plam_t plam )
  * Block Memory Allocator:
  */
 
-static pl_bool_t plbm_is_valid( pl_size_t nsize, pl_size_t bsize )
-{
-    if ( ( nsize > sizeof( plam_node_s ) + bsize ) && bsize >= sizeof( pl_t ) ) {
-        return pl_true;
-    } else {
-        return pl_false;
-    }
-}
-
-static pl_none plbm_invalid( plbm_t plbm )
-{
-    plbm->node = NULL;
-    plbm->head = NULL;
-    plbm->nsize = 0;
-    plbm->bsize = 0;
-    plbm->itail = 0;
-}
-
-static pl_size_t plbm_itail( plbm_t plbm )
-{
-    return PLINTH_ALIGN_TO( plbm->nsize - sizeof( plam_node_s ), plbm->bsize ) / plbm->bsize;
-}
-
-
 pl_none plbm_new( plbm_t plbm, pl_size_t nsize, pl_size_t bsize )
 {
-    if ( plbm_is_valid( nsize, bsize ) ) {
-        plbm->node = pl_alloc_memory( nsize );
-        if ( plbm->node ) {
-            plam_node_init( plbm->node, pl_true );
-            plbm->head = NULL;
-            plbm->nsize = nsize;
-            plbm->bsize = bsize;
-            plbm->itail = plbm_itail( plbm );
-        } else {
-            // GCOV_EXCL_START
-            plbm_invalid( plbm );
-            // GCOV_EXCL_STOP
-        }
+    if ( plbm__is_valid( nsize, bsize ) ) {
+        plbm__use_type(
+            plbm, plam__node_allocate( nsize, PL_AA_HEAP, NULL ), nsize, bsize, PL_AA_HEAP, NULL );
     } else {
-        plbm_invalid( plbm );
+        plbm__invalid( plbm );
     }
 }
 
 
 pl_none plbm_use( plbm_t plbm, pl_t node, pl_size_t nsize, pl_size_t bsize )
 {
-    if ( plbm_is_valid( nsize, bsize ) ) {
-        plam_node_init( node, pl_false );
-        plbm->node = node;
-        plbm->head = NULL;
-        plbm->nsize = nsize;
-        plbm->bsize = bsize;
-        plbm->itail = plbm_itail( plbm );
+    if ( plbm__is_valid( nsize, bsize ) ) {
+        plbm__use_type( plbm, node, nsize, bsize, PL_AA_SELF, NULL );
     } else {
-        plbm_invalid( plbm );
+        plbm__invalid( plbm );
     }
 }
 
 
 pl_none plbm_use_plam( plbm_t plbm, plam_t host, pl_size_t nsize, pl_size_t bsize )
 {
-    plbm_use( plbm, plam_get( host, nsize ), nsize, bsize );
+    plbm__use_type( plbm, plam_get( host, nsize ), nsize, bsize, PL_AA_SELF, NULL );
+}
+
+
+pl_none plbm_use_plbm( plbm_t plbm, plbm_t host, pl_size_t bsize )
+{
+    plbm__use_type( plbm, plbm_get( host ), plbm_block_size( host ), bsize, PL_AA_SELF, NULL );
+}
+
+
+pl_none plbm_into_plam( plbm_t plbm, plam_t host, pl_size_t nsize, pl_size_t bsize )
+{
+    plbm__use_type( plbm, plam_get( host, nsize ), nsize, bsize, PL_AA_PLAM, host );
+}
+
+
+pl_none plbm_into_plbm( plbm_t plbm, plbm_t host, pl_size_t bsize )
+{
+    plbm__use_type( plbm, plbm_get( host ), plbm_block_size( host ), bsize, PL_AA_PLBM, host );
 }
 
 
 pl_none plbm_empty( plbm_t plbm, pl_size_t nsize, pl_size_t bsize )
 {
-    if ( plbm_is_valid( nsize, bsize ) ) {
-        plbm->node = NULL;
-        plbm->head = NULL;
-        plbm->nsize = nsize;
-        plbm->bsize = bsize;
-        plbm->itail = plbm_itail( plbm );
-    } else {
-        plbm_invalid( plbm );
-    }
+    plbm__use_type( plbm, NULL, nsize, bsize, PL_AA_SELF, NULL );
 }
 
 
 pl_none plbm_del( plbm_t plbm )
 {
-    plam_node_del( plbm->node );
-    plbm_invalid( plbm );
+    plam__node_del( plbm->node, plbm->nsize, plbm->type, plbm->ator );
+    plbm__invalid( plbm );
 }
 
 
 pl_t plbm_get( plbm_t plbm )
 {
     if ( plbm->node == NULL ) {
-        plbm->node = pl_alloc_memory( plbm->nsize );
+        // plbm->node = pl_alloc_memory( plbm->nsize );
+        plbm->node = plam__node_allocate( plbm->nsize, plbm->type, plbm->ator );
         if ( plbm->node == NULL ) {
             // GCOV_EXCL_START
             return NULL;
             // GCOV_EXCL_STOP
         }
-        plam_node_init( plbm->node, pl_true );
     }
 
     pl_t ret;
@@ -473,23 +651,23 @@ pl_t plbm_get( plbm_t plbm )
         ret = plbm->head;
         plbm->head = *( (pl_t*)plbm->head );
     } else if ( plbm->itail > 0 ) {
-        ret = plbm->node->data + ( ( plbm_itail( plbm ) - plbm->itail ) * plbm->bsize );
+        ret = plbm->node->data + ( ( plbm__itail( plbm ) - plbm->itail ) * plbm->bsize );
         plbm->itail--;
     } else {
         /* Allocate new node. */
         plam_node_t node;
-        node = pl_alloc_memory( plbm->nsize );
+        // node = pl_alloc_memory( plbm->nsize );
+        node = plam__node_allocate( plbm->nsize, plbm->type, plbm->ator );
         if ( node == NULL ) {
             // GCOV_EXCL_START
             return NULL;
             // GCOV_EXCL_STOP
         }
-        plam_node_init( node, pl_true );
         plbm->node->next = node;
         node->prev = plbm->node;
         plbm->node = node;
         ret = node->data;
-        plbm->itail = plbm_itail( plbm );
+        plbm->itail = plbm__itail( plbm );
         plbm->itail--;
     }
 
@@ -546,14 +724,6 @@ pl_bool_t plbm_is_empty( plbm_t plbm )
  * Continuous Memory Allocator:
  */
 
-static pl_none plcm_init( plcm_t plcm )
-{
-    plcm->size = 0;
-    plcm->used = 0;
-    plcm->data = NULL;
-    plcm->debt = pl_false;
-}
-
 pl_none plcm_new( plcm_t plcm, pl_size_t size )
 {
     pl_t mem;
@@ -566,7 +736,7 @@ pl_none plcm_new( plcm_t plcm, pl_size_t size )
         plcm->debt = pl_true;
     } else {
         // GCOV_EXCL_START
-        plcm_init( plcm );
+        plcm__init( plcm );
         // GCOV_EXCL_STOP
     }
 }
@@ -589,7 +759,7 @@ pl_none plcm_use_plam( plcm_t plcm, plam_t plam, pl_size_t size )
 
 pl_none plcm_empty( plcm_t plcm, pl_size_t size )
 {
-    plcm_init( plcm );
+    plcm__init( plcm );
     plcm->size = size;
 }
 
@@ -599,7 +769,7 @@ pl_none plcm_del( plcm_t plcm )
     if ( plcm->debt && !plcm_is_empty( plcm ) ) {
         pl_free_memory( plcm->data );
     }
-    plcm_init( plcm );
+    plcm__init( plcm );
 }
 
 
@@ -625,7 +795,7 @@ pl_none plcm_resize( plcm_t plcm, pl_size_t size )
                 plcm->debt = pl_true;
             } else {
                 // GCOV_EXCL_START
-                plcm_init( plcm );
+                plcm__init( plcm );
                 // GCOV_EXCL_STOP
             }
 
@@ -647,7 +817,7 @@ pl_none plcm_resize( plcm_t plcm, pl_size_t size )
                 plcm->debt = pl_true;
             } else {
                 // GCOV_EXCL_START
-                plcm_init( plcm );
+                plcm__init( plcm );
                 // GCOV_EXCL_STOP
             }
 
@@ -817,12 +987,6 @@ pl_bool_t plcm_is_empty( plcm_t plcm )
  * String Storage:
  */
 
-static pl_none plss_terminate( plcm_t plcm )
-{
-    *( (char*)( plcm->data + plcm->used ) ) = 0;
-}
-
-
 plcm_t plss_append( plcm_t plcm, plsr_s str )
 {
     plcm_resize( plcm, plcm->used + str.length + 1 );
@@ -951,6 +1115,7 @@ pl_bool_t plss_is_empty( plcm_t plcm )
 }
 
 
+
 /* ------------------------------------------------------------
  * String Referencing:
  */
@@ -966,6 +1131,7 @@ plsr_s plsr_from_string( const char* str )
     }
     return ret;
 }
+
 
 plsr_s plsr_from_string_and_length( const char* str, pl_size_t length )
 {
