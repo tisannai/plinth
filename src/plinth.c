@@ -70,32 +70,6 @@ static pl_t plam__node_allocate( pl_size_t size, pl_aa_t type, pl_t ator )
 
 static plam_node_t plam__node_del( plam_node_t node, pl_size_t size, pl_aa_t type, pl_t ator )
 {
-    //     if ( node ) {
-    //
-    //         plam_node_t left;
-    //         plam_node_t right;
-    //         plam_node_t cur;
-    //
-    //         left = node->prev;
-    //         right = node;
-    //
-    //         while ( right ) {
-    //             cur = right;
-    //             right = right->next;
-    //             if ( cur->type == PL_AA_HEAP ) {
-    //                 pl_free_memory( cur );
-    //             }
-    //         }
-    //
-    //         while ( left ) {
-    //             cur = left;
-    //             left = left->prev;
-    //             if ( cur->type == PL_AA_HEAP ) {
-    //                 pl_free_memory( cur );
-    //             }
-    //         }
-    //     }
-
     if ( node ) {
 
         plam_node_t left;
@@ -407,7 +381,7 @@ pl_none plam_del( plam_t plam )
 
 pl_t plam_get( plam_t plam, pl_size_t size )
 {
-    if ( size > plam->size - sizeof( plam_node_s ) ) {
+    if ( size > plam_node_capacity( plam ) ) {
         /* Too large allocation. */
         return NULL;
     }
@@ -551,7 +525,7 @@ pl_size_t plam_used( plam_t plam )
 pl_size_t plam_free( plam_t plam )
 {
     if ( plam->node ) {
-        return plam->size - sizeof( plam_node_s ) - plam->node->used;
+        return plam_node_capacity( plam ) - plam->node->used;
     } else {
         return 0;
     }
@@ -561,6 +535,12 @@ pl_size_t plam_free( plam_t plam )
 pl_size_t plam_size( plam_t plam )
 {
     return plam->size;
+}
+
+
+pl_size_t plam_node_capacity( plam_t plam )
+{
+    return plam->size - sizeof( plam_node_s );
 }
 
 

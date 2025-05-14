@@ -210,12 +210,10 @@ pl_enum( pl_aa ){ PL_AA_SELF = 0, PL_AA_HEAP, PL_AA_PLAM, PL_AA_PLBM, PL_AA_PLCM
 pl_struct_type( plam_node );
 pl_struct_body( plam_node )
 {
-    plam_node_t prev;  /**< Previous node. */
-    plam_node_t next;  /**< Next node. */
-    pl_size_t   used;  /**< Used count for data. */
-                       //     pl_bool_t   debt;      /**< Reservation debt? */
-                       //     pl_aa_t   type;      /**< Reservation type. */
-    uint8_t data[ 0 ]; /**< Data. */
+    plam_node_t prev;      /**< Previous node. */
+    plam_node_t next;      /**< Next node. */
+    pl_size_t   used;      /**< Used count for data. */
+    uint8_t     data[ 0 ]; /**< Data location. */
 };
 pl_struct( plam )
 {
@@ -567,13 +565,23 @@ pl_size_t plam_free( plam_t plam );
 
 
 /**
- * @brief Node size.
+ * @brief Return node size.
  *
  * @param    plam   Plam handle.
  *
  * @return Node size.
  */
 pl_size_t plam_size( plam_t plam );
+
+
+/**
+ * @brief Return node capacity.
+ *
+ * @param    plam   Plam handle.
+ *
+ * @return Node capasity.
+ */
+pl_size_t plam_node_capacity( plam_t plam );
 
 
 /**

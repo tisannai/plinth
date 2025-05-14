@@ -75,6 +75,8 @@ void test_plam( void )
     pl_t   m;
     char*  s1;
     char*  s2;
+    pl_t   m1;
+    pl_t   m2;
 
     plam_new( &plam, 1024 );
     TEST_ASSERT_EQUAL( 0, plam_used( &plam ) );
@@ -230,6 +232,58 @@ void test_plam( void )
     }
     TEST_ASSERT_EQUAL( 768, plam_used( &plam ) );
     plam_del( &plam );
+
+
+    /* Cover plam__node_del. */
+    plam_new( &plam, 1024 );
+    TEST_ASSERT_EQUAL( 0, plam_used( &plam ) );
+    m1 = plam_get( &plam, 512 );
+    TEST_ASSERT_EQUAL( 512, plam_used( &plam ) );
+    m2 = plam_get( &plam, 512 );
+    TEST_ASSERT_EQUAL( 512, plam_used( &plam ) );
+    plam_put( &plam, 512 );
+    plam_put( &plam, 512 );
+    plam_del( &plam );
+
+    plam_use( &plam, mem, 1024 );
+    TEST_ASSERT_EQUAL( 0, plam_used( &plam ) );
+    m1 = plam_get( &plam, 512 );
+    TEST_ASSERT_EQUAL( 512, plam_used( &plam ) );
+    m2 = plam_get( &plam, 512 );
+    TEST_ASSERT_EQUAL( 512, plam_used( &plam ) );
+    plam_put( &plam, 512 );
+    plam_put( &plam, 512 );
+    plam_del( &plam );
+
+    plam_use( &plam, mem, 1024 );
+    TEST_ASSERT_EQUAL( 0, plam_used( &plam ) );
+    plam_into_plam( &plam2, &plam, 768 );
+    TEST_ASSERT_EQUAL( 768, plam_used( &plam ) );
+    m1 = plam_get( &plam2, 512 );
+    TEST_ASSERT_EQUAL( 512, plam_used( &plam2 ) );
+    m2 = plam_get( &plam2, 512 );
+    TEST_ASSERT_EQUAL( 512, plam_used( &plam2 ) );
+    plam_put( &plam2, 512 );
+    plam_put( &plam2, 512 );
+    plam_del( &plam2 );
+    plam_del( &plam );
+
+    plbm_use( &plbm, mem, 1024, 384 );
+    plam_into_plbm( &plam2, &plbm );
+    m1 = plam_get( &plam2, 256 );
+    TEST_ASSERT_EQUAL( 256, plam_used( &plam2 ) );
+    m2 = plam_get( &plam2, 256 );
+    TEST_ASSERT_EQUAL( 256, plam_used( &plam2 ) );
+    m1 = plam_get( &plam2, 256 );
+    TEST_ASSERT_EQUAL( 256, plam_used( &plam2 ) );
+    m2 = plam_get( &plam2, 256 );
+    TEST_ASSERT_EQUAL( 256, plam_used( &plam2 ) );
+    plam_put( &plam2, 256 );
+    plam_put( &plam2, 256 );
+    plam_put( &plam2, 256 );
+    plam_put( &plam2, 256 );
+    plam_del( &plam2 );
+    plam_del( &plam );
 }
 
 
@@ -332,7 +386,6 @@ void test_plbm( void )
     plbm_del( &plbm2 );
     plbm_del( &plbm );
 
-    pl_dummy();
     plam_use( &plam, mem, 1024 );
     plbm_into_plam( &plbm2, &plam, 256, 64 );
     for ( int i = 0; i < 6; i++ ) {
