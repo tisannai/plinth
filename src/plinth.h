@@ -404,7 +404,7 @@ pl_none plam_use( plam_t plam, pl_t node, pl_size_t size );
 /**
  * @brief Initiate nested plam from plam (no debt).
  *
- * @param    plam   Plam handle of nested.
+ * @param    plam   Nested plam handle.
  * @param    host   Plam handle.
  * @param    size   Node size.
  *
@@ -416,7 +416,7 @@ pl_none plam_use_plam( plam_t plam, plam_t host, pl_size_t size );
 /**
  * @brief Initiate nested plam from plbm (no debt).
  *
- * @param    plam   Plam handle of nested.
+ * @param    plam   Nested plam handle.
  * @param    host   Plbm handle.
  *
  * @return None
@@ -427,7 +427,7 @@ pl_none plam_use_plbm( plam_t plam, plbm_t host );
 /**
  * @brief Deploy plam inside plam (debt).
  *
- * @param    plam   Plam handle of nested.
+ * @param    plam   Nested plam handle.
  * @param    host   Plam handle.
  * @param    size   Node size.
  *
@@ -439,7 +439,7 @@ pl_none plam_into_plam( plam_t plam, plam_t host, pl_size_t size );
 /**
  * @brief Deploy plam inside plbm (debt).
  *
- * @param    plam   Plam handle of nested.
+ * @param    plam   Nested plam handle.
  * @param    host   Plbm handle.
  *
  * @return None
@@ -448,10 +448,11 @@ pl_none plam_into_plbm( plam_t plam, plbm_t host );
 
 
 /**
- * @brief Create empty plam.
+ * @brief Create empty plam for heap allocations.
  *
  * Empty plam is a placeholder with handle setup for allocations.
- * However, no heap allocations are made at creation.
+ * However, no heap allocations are made at creation, i.e. this allows
+ * lazy behavior.
  *
  * @param    plam   Plam handle.
  * @param    size   Node size.
@@ -459,6 +460,37 @@ pl_none plam_into_plbm( plam_t plam, plbm_t host );
  * @return None
  */
 pl_none plam_empty( plam_t plam, pl_size_t size );
+
+
+/**
+ * @brief Create empty nested plam for plam allocations.
+ *
+ * Empty plam is a placeholder with handle setup for allocations.
+ * However, no host allocations are made at creation, i.e. this allows
+ * lazy behavior.
+ *
+ * @param    plam   Plam handle.
+ * @param    host   Plam handle.
+ * @param    size   Node size.
+ *
+ * @return None
+ */
+pl_none plam_empty_into_plam( plam_t plam, plam_t host, pl_size_t size );
+
+
+/**
+ * @brief Create empty nested plam for plbm allocations.
+ *
+ * Empty plam is a placeholder with handle setup for allocations.
+ * However, no host allocations are made at creation, i.e. this allows
+ * lazy behavior.
+ *
+ * @param    plam   Plam handle.
+ * @param    host   Plbm handle.
+ *
+ * @return None
+ */
+pl_none plam_empty_into_plbm( plam_t plam, plbm_t host );
 
 
 /**
@@ -627,7 +659,7 @@ pl_none plbm_use( plbm_t plbm, pl_t node, pl_size_t nsize, pl_size_t bsize );
 /**
  * @brief Initiate nested plbm from plam (no debt).
  *
- * @param    plbm   Plbm handle of nested.
+ * @param    plbm   Nested plbm handle.
  * @param    host   Plam handle.
  * @param    nsize  Node size.
  * @param    bsize  Block size.
@@ -642,7 +674,7 @@ pl_none plbm_use_plam( plbm_t plbm, plam_t host, pl_size_t nsize, pl_size_t bsiz
  *
  * Node size is inherited from host block size.
  *
- * @param    plbm   Plbm handle of nested.
+ * @param    plbm   Nested plbm handle.
  * @param    host   Plbm handle.
  * @param    nsize  Node size.
  * @param    bsize  Block size.
@@ -655,7 +687,7 @@ pl_none plbm_use_plbm( plbm_t plbm, plbm_t host, pl_size_t bsize );
 /**
  * @brief Deploy plbm inside plam (debt).
  *
- * @param    plbm   Plbm handle of nested.
+ * @param    plbm   Nested plbm handle.
  * @param    host   Plam handle.
  * @param    nsize  Node size.
  * @param    bsize  Block size.
@@ -670,7 +702,7 @@ pl_none plbm_into_plam( plbm_t plbm, plam_t host, pl_size_t nsize, pl_size_t bsi
  *
  * Node size is inherited from host block size.
  *
- * @param    plbm   Plbm handle of nested.
+ * @param    plbm   Nested plbm handle.
  * @param    host   Plbm handle.
  * @param    bsize  Block size.
  *
@@ -692,6 +724,41 @@ pl_none plbm_into_plbm( plbm_t plbm, plbm_t host, pl_size_t bsize );
  * @return None
  */
 pl_none plbm_empty( plbm_t plbm, pl_size_t nsize, pl_size_t bsize );
+
+
+/**
+ * @brief Create empty nested plbm for plam allocations.
+ *
+ * Empty plbm is a placeholder with handle setup for allocations.
+ * However, no host allocations are made at creation, i.e. this allows
+ * lazy behavior.
+ *
+ * @param    plbm   Nested plbm handle.
+ * @param    host   Plam handle.
+ * @param    nsize  Node size.
+ * @param    bsize  Block size.
+ *
+ * @return None
+ */
+pl_none plbm_empty_into_plam( plbm_t plbm, plam_t host, pl_size_t nsize, pl_size_t bsize );
+
+
+/**
+ * @brief Create empty nested plbm for plbm allocations.
+ *
+ * Empty plbm is a placeholder with handle setup for allocations.
+ * However, no host allocations are made at creation, i.e. this allows
+ * lazy behavior.
+ *
+ * Node size is inherited from host block size.
+ *
+ * @param    plbm   Nested plbm handle.
+ * @param    host   Plbm handle.
+ * @param    bsize  Block size.
+ *
+ * @return None
+ */
+pl_none plbm_empty_into_plbm( plbm_t plbm, plbm_t host, pl_size_t bsize );
 
 
 /**
@@ -813,15 +880,26 @@ pl_none plcm_use( plcm_t plcm, pl_t mem, pl_size_t size );
 
 
 /**
- * @brief Create nested plcm inside a plam (no debt).
+ * @brief Initiate nested plcm from plam (no debt).
  *
- * @param    plcm   Plcm handle of nested.
+ * @param    plcm   Nested plcm handle.
  * @param    host   Plam handle.
  * @param    size   Allocation size.
  *
  * @return None
  */
-pl_none plcm_use_plam( plcm_t plcm, plam_t plam, pl_size_t size );
+pl_none plcm_use_plam( plcm_t plcm, plam_t host, pl_size_t size );
+
+
+/**
+ * @brief Initiate nested plcm from plbm (no debt).
+ *
+ * @param    plcm   Nested plcm handle.
+ * @param    host   Plbm handle.
+ *
+ * @return None
+ */
+pl_none plcm_use_plbm( plcm_t plcm, plbm_t host );
 
 
 /**

@@ -206,7 +206,7 @@ static pl_none plss_terminate( plcm_t plcm )
    ------------------------------------------------------------ */
 
 
-pl_none pl_dummy( pl_none ) {}
+pl_none pl_dummy( pl_none ) {} // GCOV_EXCL_LINE
 
 
 /* ------------------------------------------------------------
@@ -369,6 +369,24 @@ pl_none plam_empty( plam_t plam, pl_size_t size )
     plam->size = size;
     plam->type = PL_AA_SELF;
     plam->ator = NULL;
+}
+
+
+pl_none plam_empty_into_plam( plam_t plam, plam_t host, pl_size_t size )
+{
+    plam->node = NULL;
+    plam->size = size;
+    plam->type = PL_AA_PLAM;
+    plam->ator = host;
+}
+
+
+pl_none plam_empty_into_plbm( plam_t plam, plbm_t host )
+{
+    plam->node = NULL;
+    plam->size = plbm_block_size( host );
+    plam->type = PL_AA_PLBM;
+    plam->ator = host;
 }
 
 
@@ -606,6 +624,18 @@ pl_none plbm_empty( plbm_t plbm, pl_size_t nsize, pl_size_t bsize )
 }
 
 
+pl_none plbm_empty_into_plam( plbm_t plbm, plam_t host, pl_size_t nsize, pl_size_t bsize )
+{
+    plbm__use_type( plbm, NULL, nsize, bsize, PL_AA_PLAM, host );
+}
+
+
+pl_none plbm_empty_into_plbm( plbm_t plbm, plbm_t host, pl_size_t bsize )
+{
+    plbm__use_type( plbm, NULL, plbm_block_size( host ), bsize, PL_AA_PLBM, host );
+}
+
+
 pl_none plbm_del( plbm_t plbm )
 {
     plam__node_del( plbm->node, plbm->nsize, plbm->type, plbm->ator );
@@ -731,9 +761,15 @@ pl_none plcm_use( plcm_t plcm, pl_t mem, pl_size_t size )
 }
 
 
-pl_none plcm_use_plam( plcm_t plcm, plam_t plam, pl_size_t size )
+pl_none plcm_use_plam( plcm_t plcm, plam_t host, pl_size_t size )
 {
-    plcm_use( plcm, plam_get( plam, size ), size );
+    plcm_use( plcm, plam_get( host, size ), size );
+}
+
+
+pl_none plcm_use_plbm( plcm_t plcm, plbm_t host )
+{
+    plcm_use( plcm, plbm_get( host ), plbm_block_size( host ) );
 }
 
 
