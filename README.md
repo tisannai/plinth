@@ -8,7 +8,7 @@ type definitions.
 Plinth allows the memory allocators to be nested, i.e. arrangements
 where the nested allocator allocates from the host (base) allocator.
 Nesting provides flexible and efficient memory allocations. In
-general, pre-existing allocations can be used for allocators.
+general, pre-existing allocations can be used for all allocator types.
 Pre-existing allocation can be from stack or from another allocator.
 
 Allocators are used through handles, which are pointers to Allocator
@@ -22,24 +22,24 @@ consult the test directory for usage examples.
 ## Basic Memory Allocation
 
 Plinth defines basic heap memory allocation functions:
-`pl_alloc_memory`, `pl_free_memory`, and `pl_realloc_memory`. These
-are equal to `calloc`, `free,` and `realloc`. Additionally there is
-`pl_alloc_string` for string duplication and `pl_format_string` for
-formatting strings to heap allocations. Both `pl_alloc_string` and
-`pl_format_string` results must be deallocated with `pl_free_memory`.
+`pl_alloc_memory()`, `pl_free_memory()`, and `pl_realloc_memory()`.
+These are equal to `malloc()`, `free()`, and `realloc()`. Additionally
+there is `pl_alloc_string()` for string duplication and
+`pl_format_string()` for formatting strings to heap allocations. Both
+`pl_alloc_string()` and `pl_format_string()` results must be
+deallocated with `pl_free_memory()`.
 
 
 ## Arena Memory Allocator
 
 `plam` is the fundamental memory allocator in Plinth. It is an Arena
-type of allocator. `plam` consists of one or more Nodes, which are
+type allocator. `plam` consists of one or more Nodes, which are
 chained together as a doubly linked list. Each allocation from `plam`
-is a continuous chunk of memory from a Node. `plam` can be created
-from heap with `plam_new` (Dept) or from a pre-existing allocation
-with `plam_use` (no Dept). Heap allocated `plam` has Debt, i.e. it
-needs to be deallocated from heap. If `plam` uses pre-existing
-allocation (for example, from stack or from another `plam`), it does
-not require a deallocation.
+is a continuous chunk of memory from a Node. When the memory from one
+Node is exhausted, a new Node is allocated and added to the chain.
+Memory can be deallocated back to `plam`, but only in the order it was
+reserved, and each deallocation must be annotated with its size.
+`plam` does not keep track of the allocation history.
 
 ```
            plam_node_s
@@ -52,27 +52,56 @@ not require a deallocation.
            size
 ```
 
-The allocation is performed with `plam_get`. When the current Node
-runs out of memory, a new Node is allocated (from heap). User can also
-put back allocations with `plam_put`. The deallocations must occur in
-reverse order to the allocations and they have to be annotated with
-the corresponding allocation sizes.
+`plam` can be created from:
 
-The complete chain of Nodes is deallocated with `plam_del`. `plam_del`
-does real deallocation only when the `plam` Node has Debt. A common
-pattern is where the first Node has no Debt, but all the rest have
-Debt.
+* Heap, with `plam_new()` (or `plam_empty()`). All Nodes are heap
+  allocated and must be freed (Dept).
+
+* Pre-allocation, with `plam_use()`, `plam_use_plam()`, or
+  `plam_use_plbm()`. First Node has no Debt and the rest (if any) have
+  Debt.
+
+* Another `plam`, with `plam_into_plam()` (or
+  `plam_empty_into_plam()`). All Nodes are from host and can be freed,
+  if beneficial.
+
+* `plbm`, with `plam_into_plbm()` (or `plam_empty_into_plbm()`). All
+  Nodes are from host and can be freed, if beneficial.
+
+The `empty` versions cause no initial allocations and can be used for
+lazy behavior.
+
+The allocation is performed with `plam_get()`. When the current Node
+runs out of memory, a new Node is allocated from heap or from host.
+User can also put back allocations with `plam_put()`. The
+deallocations must occur in reverse order to the allocations and they
+have to be annotated with the corresponding allocation sizes. When
+deallocations progress to the previous Nodes (towards left), then new
+allocations will be returned from the empty Nodes (towards right).
+
+Nested `plam` allocates Node memory from host with `plam_get()` and
+deallocates with `plam_put()`. When a `plam` is hosted by another
+`plam`, the nested `plam` may free itself only if the are no other
+allocations from the host during the lifetime of the nested `plam`.
+Otherwise, there is no quarantee of deallocations in reverse order to
+the host.
+
+The complete chain of Nodes is deallocated with `plam_del()`.
+`plam_del()` does real deallocation only when the `plam` Node has
+Debt. `plam_del()` can be safely called with all the allocation
+scenarios.
 
 
 ## Block Memory Allocator
 
-`plbm` is a block memory allocator. It allocates "small" blocks of
-memory with fixed sizes. The blocks can be allocated and deallocated
-in any order. Under the hood, the deallocated blocks are maintained in
-a linked list. Each block is a continuous chunk of memory, but memory
-between blocks is not guaranteed to be continuous. However,
+`plbm` is a Block memory allocator. It allocates "small" Blocks of
+memory with fixed sizes. The Blocks can be allocated and deallocated
+in any order. Under the hood, the deallocated Blocks are maintained in
+a linked list. Each Block is a continuous chunk of memory, but memory
+between Blocks is not guaranteed to be continuous. However,
 back-to-back allocations (no deallocations in between) from a
-particular Node are continuous.
+particular Node are continuous. `plbm` shares the same Node structure
+as `plam`. Each Node in `plbm` contains multiple Blocks.
 
 ```
            ..       .-.
@@ -83,26 +112,44 @@ particular Node are continuous.
                     head
 ```
 
-`plbm` can be created to heap with `plbm_new` (Debt) or to
-pre-allocated memory with `plbm_use` (no Debt). `plbm` shares the same
-Node structure as `plam`.
+`plbm` can be created from:
 
-A block of memory is allocated with `plbm_get` and deallocated with
-`plbm_put`. Every deallocated block becomes part of the
-free-block-chain, which is used as priority for every new block
-allocation. When there are no blocks in the chain or available blocks
-in the current Node, a new Node is allocated and a block is returned
-from the new Node. The blocks are returned in order, and therefore it
+* Heap, with `plbm_new()` (or `plbm_empty()`). All Nodes are heap
+  allocated and must be freed (Dept).
+
+* Pre-allocation, with `plbm_use()`, `plbm_use_plam()`, or
+  `plbm_use_plbm()`. First Node has no Debt and the rest (if any) have
+  Debt.
+
+* `plam`, with `plbm_into_plam()` (or `plbm_empty_into_plam()`). All
+  Nodes are from host and can be freed, if beneficial.
+
+* Another `plbm`, with `plbm_into_plbm()` (or
+  `plbm_empty_into_plbm()`). All Nodes are from host and can be freed,
+  if beneficial.
+
+The `empty` versions cause no initial allocations and can be used for
+lazy behavior.
+
+A Block of memory is allocated with `plbm_get()` and deallocated with
+`plbm_put()`. Every deallocated Block becomes part of the
+free-block-chain, which is used as priority for every new Block
+allocation. When there are no Blocks in the chain or available Blocks
+in the current Node, a new Node is allocated and a Block is returned
+from the new Node. The Blocks are returned in order, and therefore it
 is possible for user to get continuous memory.
+
+The complete chain of Nodes is deallocated with `plbm_del()`.
+`plbm_del()` does real deallocation only when the `plbm` Node has
+Debt. `plbm_del()` can be safely called with all the allocation
+scenarios.
 
 
 ## Continuous Memory Allocator
 
-`plcm` is a Continuous memory allocator. `plcm` can be created to heap
-with `plcm_new` (Debt) or to pre-allocated memory with `plcm_use` (no
-Debt). `plcm` guarantees that all the allocated memory is continuous.
-`plcm` is therefore suitable for strings and other arrays with packed
-items.
+`plcm` is a Continuous memory allocator. `plcm` is used when a
+continuous chunk of memory is required. This is typical for strings
+and other arrays of items.
 
 ```
            plcm_s    data
@@ -111,48 +158,59 @@ items.
         #    =>   +++++-----
 ```
 
-`plcm` is created with initial allocation size. The user makes
+`plcm` can be created from:
+
+* Heap, with `plcm_new()`. Memory is heap allocated and must be
+  freed (Dept).
+
+* Pre-allocation, with `plcm_use()`, `plcm_use_plam()`, or
+  `plcm_use_plbm()`. At first memory has no Debt, but if required
+  allocation size exceeds the initial capacity, memory is allocated
+  from heap and becomes Debt.
+
+`plcm` is created with an initial allocation size. The user makes
 allocations from the initial allocation, until it runs out. Regardless
 of the initial allocation storage (Debt or not), the next allocation
-is always from heap (with Debt). When the allocation is renewed, it
-can change the location of the allocation, and therefore all direct
-references to memory become invalid. For this reason, references to
-allocations are by default offsets to base address. The offsets are
-called Positions. When Position is used, it is added to the current
-base address and therefore the resulting references are up-to-date and
-valid.
+is always from heap (with Debt). When the allocation is renewed, the
+location of the memory is likely to change, and therefore all direct
+references to memory from `plcm` become invalid. For this reason,
+references to allocations are by default offsets to the base address.
+The offsets are called Positions. When Position is used, it is added
+to the current base address and therefore the resulting reference is
+up-to-date and valid.
 
-Allocations can be made with `plcm_get_pos`, where the return value is
-a Position to the allocator. Other possibility is `plcm_get_ref`,
-where the return value is a pointer to the allocated location. User
-may also allocate and store the value in one action with
-`plcm_store` function.
+Allocations can be made with `plcm_get_pos()`, where the return value
+is a Position to the allocator. Other possibility is `plcm_get_ref()`,
+where the return value is a pointer to the allocated location, and has
+the relocation limitations mentioned above. User may also allocate and
+store the value in a single action with the `plcm_store()` function.
 
 If the continuous data storage requires a terminating value,
-`plcm_terminate` can be used. For example, a NULL terminated array
-could be achieved with `plcm_terminate`.
+`plcm_terminate()` can be used. For example, a NULL terminated array
+could be achieved with `plcm_terminate()`.
 
 `plcm` may contain multiple allocations, but typically there is only
-one allocation, which changes its size. The only allocation that can
-change its size in `plcm` is the last. Only allocation is also the
-last.
+one allocation, with changing size. The only allocation that can
+change its size in `plcm` is the last, and obviously the only
+allocation is also the last.
 
 
 ## String Storage
 
 `plss` provides a set of functions for storing string data to a
-`plcm`. User can append to existing strings (in `plcm`) with
-`plss_append`, `plss_append_string`, `plss_append_char`, or with
-`plss_format_string`.
+`plcm`. User can append to existing strings with `plss_append()`,
+`plss_append_string()`, `plss_append_char()`, or with
+`plss_format_string()`.
 
-The existing string can be replaced with `plss_set` or
-`plss_reformat_string`.
+The existing string can be replaced with `plss_set()` or
+`plss_reformat_string()`.
 
-The stored string content is retrieved with `plss_string` and length
-with `plss_length`.
+The stored string content is retrieved with `plss_string()` and length
+with `plss_length()`.
 
 Each `plss` storage function ensures that the stored string is NULL
-terminated and can be used directly with C library functions.
+terminated and can be therefore used directly with C library
+functions.
 
 
 ## String References
@@ -165,68 +223,117 @@ terminator.
 
 String reference provides an efficient way of examining and
 constructing strings. String references are used by value, i.e. the
-`plsr` struct is copied from caller to callee. This allows function
-call nesting and in overall, more functional style of programming.
+`plsr` struct is copied from the caller to the callee. This allows
+function call nesting and in overall, more functional style of
+programming.
+
+`plsr` can be create from C string with `plsr_from_string()` or if the
+length is already known with `plsr_from_string_and_length()`.
+`plsr_string()` returns the content and `plsr_length()` returns the
+length. `plsr_compare()` and `plsr_compare_n()` can be used for simple
+same-or-not-same comparison.
+
+`plsr_null()` returns a `plsr` value that is semantically same as a
+string NULL pointer. `plsr_is_null()` is used to test if the `plsr` is
+NULL or not.
 
 
 ## Memory Allocation Strategies
 
 Program performance is often limited by memory bandwidth and latency.
-We want to get the data from the nearest possible cache level. This is
-enabled by minimizing the amount of data in use, promoting data
-locality and laying out the data to consecutive addresses (arrays).
+We want to get the data from the nearest possible cache level, because
+it is the fastest. This is assisted by minimizing the amount of data
+in use, reuse of same addresses, and laying out the data to
+consecutive addresses (arrays).
 
-Each allocated data has size and lifetime. The easiest case is when we
-know the maximum data size and the exact lifetime, in advance. The
-most difficult case is when we don't know the data size and the
-lifetime might vary.
+Each allocated data has size and lifetime. The easiest case for
+allocations is when we know the maximum or exact data size and the
+lifetime, in advance. The most difficult case is when we don't know
+the data size and the lifetime might vary.
 
-Strings, and other array types, needs to be allocated to a continuous
+Strings, and other array types, need to be allocated to a continuous
 chunk of memory. This is possible with `plam`, when we know the size
-in advance. For unknown sizes, we should use the `plcm`.
+in advance. For unknown sizes, we should use `plcm`.
 
-Independent objects can be allocated from `plbm`. `plbm` allows also
-efficient and convenient allocation/deallocation sequences, since all
-allocations can be deallocated in any order.
+Independent objects, or in general fixes size items, can be allocated
+with `plbm`. `plbm` allows also efficient and convenient
+allocation/deallocation sequences, since all allocations can be
+deallocated in any order.
 
-Stack allocations should be used much as possible. However, stack
-allocations should be reserved for small data that is discarded at
-function exit. Recursive functions should not normally make much stack
-allocations. Array of memory from stack can be especially useful for
-the `plcm` allocator. For example, if a string is build within the
-function, the user can allocate from stack an char array. The size is
-adjusted so that the typical string fits into the array. In the rare
-occasion when the stack memory is not enough, the allocation is moved
-to heap automatically by `plcm`. The typical case remains fast, since
-no heap allocation is made.
+The table below provides a quick summary of allocation options. The
+options are not exclusive and therefore other options might be used as
+well. The first option listed is likely the best fit. Memory
+originates from either pre-allocation (stack or another allocator) or
+from heap.
 
-When the data lifetime exceeds the lifetime of the allocating
-function, the data must be allocated from heap. Also when the size of
-the data is large, we should not allocate from stack and use heap
-instead. Direct heap allocations with `pl_alloc_memory` (i.e.
-`malloc`), should be avoided when possible. A common strategy is to
-first allocated large amount of with `plam` (the host) and then create
-nested allocators to the host. If the allocated objects are
-independent, we can use a `plbm`. If the we need an array, we can use
-a `plcm`. The initial size of `plcm` should be large enough to cover
-the typical use cases. However, if `plcm` capacity is exhausted, the
-allocation is moved to heap. In this case the initial `plcm`
-allocation becomes overhead in the host `plam`.
+| Size known | Lifetime known | Continuous | Allocator                       |
+|:-----------|:---------------|:-----------|:--------------------------------|
+| yes        | yes            | yes        | `plam` `plbm` `plcm` (pre/heap) |
+| yes        | yes            | no         | `plbm` `plam` (pre/heap)        |
+| yes        | no             | yes        | `plam` `plbm` `plcm` (heap)     |
+| yes        | no             | no         | `plbm` `plam` (heap)            |
+| no         | yes            | yes        | `plcm` (pre/heap)               |
+| no         | yes            | no         | `plam` (pre/heap)               |
+| no         | no             | yes        | `plcm` (heap/pre)               |
+| no         | no             | no         | `plam` (heap)                   |
+
+Stack allocations should be used as much as possible, because they are
+very efficient. However, stack allocations should be reserved for only
+small allocations that can be discarded at function exit. Recursive
+functions should not normally make much stack allocations, since every
+recursion adds up and might eventually cause an stack overflow.
+
+Array of memory from stack can be especially useful for the `plcm`
+allocator. For example, if a string is to be build within the
+function, the user can reserve an array of chars from stack as memory
+and use it through `plcm_use()`. The array size should be selected so
+that, typically the built string fits into the stack array. In the
+rare occasion when the stack memory is not enough, the allocation is
+moved to heap automatically by `plcm`. The typical case remains fast,
+since no heap allocation is performed. User may always call
+`plcm_del()` at the function exit regardless of the actual allocation
+type, since `plcm` keeps track of the memory type.
+
+In general, allocations should be performed as early as possible. If
+the function that uses the allocated memory does not have to know
+where the memory originated, we have a less coupled function. Less
+coupled functions are more reusable. Additionally, the called function
+should not deallocate the memory, since all the relevant information
+about the allocation exist in the caller. Allocators can be created as
+initially empty, when there is possibility for the allocator being
+idle. The empty allocator will perform real allocations only when the
+first allocation is requested.
+
+When data lifetime exceeds the lifetime of the allocating function,
+the data must be allocated from heap. Also when the size of the data
+is large, we should use heap. Direct heap allocations with
+`pl_alloc_memory()`, should be avoided when possible. A common
+strategy is to first allocate large amount of memory with `plam` (the
+host allocator) and then create a nested allocator into the host. If
+the allocated objects are independent, we can use `plbm`. If we need
+an continuous array, we can use `plcm`. The initial size of `plcm`
+should be large enough to cover the typical use case. However, if
+`plcm` capacity is exhausted, the allocation is moved to heap. In this
+case the initial `plcm` allocation becomes overhead in the host
+`plam`. If this is an issue, the `plcm` allocation type can be
+identified with `plcm_debt()` and the initial allocation can be
+deallocated.
 
 When data lifetime is equal to the program lifetime, the allocation
-strategy becomes simpler. It really doesn't matter how memory is
-allocated.
+strategy becomes simple. It really doesn't matter how memory is
+allocated, because it is a one-time operation.
 
-Temporary string building buffers can be created with `plcm`. The
-initial reservation should be sufficiently large. Fixed sized
-allocation, which also needs to be deallocated, can be created with a
-`plbm`. Reoccurring allocations can be placed to a `plam` with
-sufficiently large initial size, from which numerous smaller
-allocations can be made from. This helps in avoiding to perform the
-more expensive direct heap allocations (`pl_alloc_memory`). When data
-lifetime is aligned with the function call stack, we can use `plam` as
-a stack data structure which is directly synced with the called
-functions.
+Temporary string building buffers can be created with `plcm`, with
+sufficiently large initial allocation size. Fixed sized allocations,
+which also need to be deallocated, can be created with a `plbm`.
+Reoccurring allocations can be placed to a `plam`, with sufficiently
+large initial allocation size. The numerous smaller allocations can be
+then made from the `plam` efficiently, since we avoid performing the
+more expensive direct heap allocations (with `pl_alloc_memory()`).
+When data lifetime correlates with the function call stack, we can use
+`plam` as a stack data structure. When a function is entered, we
+allocate with `plam_get()`. When a function is exited, we deallocate
+with `plam_put()`.
 
 
 ## Other features
@@ -242,7 +349,7 @@ Additionally a pointer type `pl_i8_p` is created, which equals to
 
 Struct types are created with `pl_struct`. For example:
 
-    `pl_struct( point )`
+    pl_struct( point )
 
 will create `pl_struct_s`, `pl_struct_t`, and `pl_struct_p` types. The
 `_s` type is the struct itself. `_t` is pointer to the struct, and
