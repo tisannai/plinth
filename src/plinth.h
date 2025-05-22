@@ -344,7 +344,7 @@ pl_t pl_realloc_memory( pl_t mem, pl_size_t size );
 
 
 /**
- * @brief Duplicate plsr string as heap memory.
+ * @brief Duplicate plsr string as heap memory with null termination.
  *
  * @param   plsr    Plsr string to duplicate.
  *
@@ -354,7 +354,7 @@ plsr_s pl_alloc_plsr( plsr_s plsr );
 
 
 /**
- * @brief Duplicate string as heap memory.
+ * @brief Duplicate string as heap memory with null termination.
  *
  * @param   str    String to duplicate.
  *
@@ -364,7 +364,7 @@ char* pl_alloc_string( const char* str );
 
 
 /**
- * @brief Format string to heap memory.
+ * @brief Format string to heap memory with null termination.
  *
  * @param   fmt    Format specifier.
  *
