@@ -405,14 +405,12 @@ pl_t plam_get( plam_t plam, pl_size_t size )
     }
 
     if ( plam->node == NULL ) {
-        // plam->node = pl_alloc_memory( plam->size );
         plam->node = plam__node_allocate( plam->size, plam->type, plam->ator );
         if ( plam->node == NULL ) {
             // GCOV_EXCL_START
             return NULL;
             // GCOV_EXCL_STOP
         }
-        // plam__node_init( plam->node, pl_true );
     }
 
     while ( 1 ) {
@@ -428,14 +426,12 @@ pl_t plam_get( plam_t plam, pl_size_t size )
 
                 /* Allocate new node. */
                 plam_node_t node;
-                // node = pl_alloc_memory( plam->size );
                 node = plam__node_allocate( plam->size, plam->type, plam->ator );
                 if ( node == NULL ) {
                     // GCOV_EXCL_START
                     return NULL;
                     // GCOV_EXCL_STOP
                 }
-                // plam__node_init( node, pl_true );
                 plam->node->next = node;
                 node->prev = plam->node;
                 plam->node = node;
@@ -646,7 +642,6 @@ pl_none plbm_del( plbm_t plbm )
 pl_t plbm_get( plbm_t plbm )
 {
     if ( plbm->node == NULL ) {
-        // plbm->node = pl_alloc_memory( plbm->nsize );
         plbm->node = plam__node_allocate( plbm->nsize, plbm->type, plbm->ator );
         if ( plbm->node == NULL ) {
             // GCOV_EXCL_START
@@ -666,7 +661,6 @@ pl_t plbm_get( plbm_t plbm )
     } else {
         /* Allocate new node. */
         plam_node_t node;
-        // node = pl_alloc_memory( plbm->nsize );
         node = plam__node_allocate( plbm->nsize, plbm->type, plbm->ator );
         if ( node == NULL ) {
             // GCOV_EXCL_START
