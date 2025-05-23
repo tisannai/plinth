@@ -319,7 +319,7 @@ pl_struct( plsr )
  *
  * @param   size   Allocation size in bytes.
  *
- * @return  Pointer to allocation.
+ * @return  Pointer to allocation, or NULL.
  */
 pl_t pl_alloc_memory( pl_size_t size );
 
@@ -338,7 +338,7 @@ pl_none pl_free_memory( pl_t mem );
  * @param   mem    Pointer to allocation.
  * @param   size   Allocation size in bytes.
  *
- * @return  Pointer to reallocation.
+ * @return  Pointer to reallocation, or NULL.
  */
 pl_t pl_realloc_memory( pl_t mem, pl_size_t size );
 
@@ -348,7 +348,7 @@ pl_t pl_realloc_memory( pl_t mem, pl_size_t size );
  *
  * @param   plsr    Plsr string to duplicate.
  *
- * @return  Duplicate.
+ * @return  Duplicate, or null plsr.
  */
 plsr_s pl_alloc_plsr( plsr_s plsr );
 
@@ -358,7 +358,7 @@ plsr_s pl_alloc_plsr( plsr_s plsr );
  *
  * @param   str    String to duplicate.
  *
- * @return  Duplicated string.
+ * @return  Duplicated string, or NULL.
  */
 char* pl_alloc_string( const char* str );
 
@@ -368,7 +368,7 @@ char* pl_alloc_string( const char* str );
  *
  * @param   fmt    Format specifier.
  *
- * @return  Formatted string in heap.
+ * @return  Formatted string in heap, or NULL.
  */
 char* pl_format_string( const char* fmt, ... );
 

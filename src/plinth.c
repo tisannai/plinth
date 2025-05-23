@@ -254,8 +254,12 @@ plsr_s pl_alloc_plsr( plsr_s plsr )
 {
     char* str;
     str = pl_alloc_memory( plsr_length( plsr ) + 1 );
-    memcpy( str, plsr_string( plsr ), plsr_length( plsr ) + 1 );
-    return plsr_from_string_and_length( str, plsr_length( plsr ) );
+    if ( str ) {
+        memcpy( str, plsr_string( plsr ), plsr_length( plsr ) + 1 );
+        return plsr_from_string_and_length( str, plsr_length( plsr ) );
+    } else {
+        return plsr_null(); // GCOV_EXCL_LINE
+    }
 }
 
 
@@ -264,7 +268,11 @@ char* pl_alloc_string( const char* str )
     if ( str ) {
         plsr_s plsr;
         plsr = pl_alloc_plsr( plsr_from_string( str ) );
-        return (char*)plsr_string( plsr );
+        if ( plsr_is_null( plsr ) ) {
+            return NULL; // GCOV_EXCL_LINE
+        } else {
+            return (char*)plsr_string( plsr );
+        }
     } else {
         return NULL;
     }
