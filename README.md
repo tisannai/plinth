@@ -426,9 +426,9 @@ directory for testcases.
 
 ## Building and installing
 
-Plinth is built with the `build.sh` script.
+Plinth is built with the `do-build` script.
 
-Install is performed with `install.sh`. Please, edit the script for
+Install is performed with `do-install`. Please, edit the script for
 setting the installation root directory.
 
 
