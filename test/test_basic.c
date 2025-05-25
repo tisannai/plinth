@@ -642,6 +642,20 @@ void test_plcm( void )
     TEST_ASSERT_EQUAL( pl_false, ret );
 
     plcm_del( &plcm );
+
+
+    /* Test plcm_put. */
+    plcm_use( &plcm, mem, 1024 );
+    s1 = plcm_get_ref( &plcm, 128 );
+    TEST_ASSERT_EQUAL( 128, plcm_used( &plcm ) );
+    s2 = plcm_get_ref( &plcm, 256 );
+    TEST_ASSERT_EQUAL( 128 + 256, plcm_used( &plcm ) );
+    plcm_put( &plcm, 256 );
+    TEST_ASSERT_EQUAL( 128, plcm_used( &plcm ) );
+    plcm_put( &plcm, 128 );
+    TEST_ASSERT_EQUAL( 0, plcm_used( &plcm ) );
+    plcm_del( &plcm );
+
 }
 
 

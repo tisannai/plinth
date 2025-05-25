@@ -292,6 +292,7 @@ pl_struct( plsr )
 
 #define plcm_get_pos_for_type( plam, type ) plcm_get_pos( ( plam ), sizeof( type ) )
 #define plcm_get_ref_for_type( plam, type ) plcm_get_ref( ( plam ), sizeof( type ) )
+#define plcm_put_for_type( plam, type ) plcm_put( ( plam ), sizeof( type ) )
 #define plcm_store_for_type( plam, data, type ) plcm_store( ( plam ), ( data ), sizeof( type ) )
 #define plcm_ref_for_type( plam, pos, type ) plcm_ref( ( plam ), ( pos ) * sizeof( type ) )
 #define plcm_set_for_type( plam, pos, data, type ) \
@@ -962,6 +963,20 @@ pl_pos_t plcm_get_pos( plcm_t plcm, pl_size_t size );
  * @return Allocation reference.
  */
 pl_t plcm_get_ref( plcm_t plcm, pl_size_t size );
+
+
+/**
+ * @brief Put allocation back to plcm.
+ *
+ * User is responsible in making the puts in reserver order with
+ * correct sizes.
+ *
+ * @param    plcm   Plcm handle.
+ * @param    size   Allocation size.
+ *
+ * @return None
+ */
+pl_none plcm_put( plcm_t plcm, pl_size_t size );
 
 
 /**

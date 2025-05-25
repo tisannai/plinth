@@ -880,6 +880,14 @@ pl_t plcm_get_ref( plcm_t plcm, pl_size_t size )
 }
 
 
+pl_none plcm_put( plcm_t plcm, pl_size_t size )
+{
+    if ( size <= plcm->used ) {
+        plcm->used -= size;
+    }
+}
+
+
 pl_pos_t plcm_store( plcm_t plcm, pl_t data, pl_size_t size )
 {
     pl_pos_t ret;
