@@ -9,7 +9,17 @@ Plinth allows the memory allocators to be nested, i.e. arrangements
 where the nested allocator allocates from the host (base) allocator.
 Nesting provides flexible and efficient memory allocations.
 Pre-existing allocations can be used for all allocator types. The
-allocation can be from stack or from another allocator.
+allocation can be from stack or from another allocator. Pre-existing
+allocations are without Debt and other allocations are with Debt.
+
+```
+        plam   +++++------           nested
+                \       /
+                 \     /
+                  \   /
+                   \ /
+        plbm        ++++ <-> +++-    host
+```
 
 Allocators are used through handles, which are pointers to Allocator
 Descriptors. All allocators allow persistent references (i.e. stable
@@ -192,6 +202,10 @@ location, and has the relocation limitations mentioned above. User may
 also allocate and store the value in a single action with the
 `plcm_store()` function.
 
+Deallocation (put back) is possible with `plcm_put()`. The
+deallocations must occur in reverse order to the allocations and they
+have to be annotated with the corresponding allocation size.
+
 If the continuous data storage requires a terminating value,
 `plcm_terminate()` can be used. For example, a NULL terminated array
 can be done with `plcm_terminate()`.
@@ -208,6 +222,15 @@ allocation is also the last.
 `plcm`. User can append to existing strings with `plss_append()`,
 `plss_append_string()`, `plss_append_char()`, or with
 `plss_format_string()`.
+
+```
+           plcm_s    string
+          /         /    used
+         /         /    /   ,size
+        #    =>   +++++o----
+                        \
+                         null
+```
 
 The existing string can be replaced with `plss_set()` or
 `plss_reformat_string()`.
@@ -227,6 +250,16 @@ references. A string reference is a pair of string content and string
 length. String references may point to any location in a C-string,
 since it contains the explicit length and does not require the NULL
 terminator.
+
+```
+            content,length
+           /
+        .-----.
+        ++++++++++++o-----
+               '---'
+                  \
+                   content,length
+```
 
 String reference provides an efficient way of examining and
 constructing strings. String references are used by value, i.e. the
@@ -275,7 +308,6 @@ either a pre-allocation (stack or another allocator) or from the heap.
 | no         | yes            | no         | `plam` (pre/heap)               |
 | no         | no             | yes        | `plcm` (heap/pre)               |
 | no         | no             | no         | `plam` (heap)                   |
-
 
 Strings, and other array types, need to be allocated to a continuous
 chunk of memory. This is possible with `plam`, when we know the size
@@ -356,7 +388,6 @@ objects can have either short or long lifetimes. The combination of
 short and long lifetime objects, with varying sizes, is challenging.
 These scenarios require that at least some allocation are performed
 using the general purpose `pl_alloc_memory()` and `pl_free_memory()`.
-
 
 
 ## Other features
@@ -453,5 +484,5 @@ are not in GIT. These can be added by executing:
 
     shell> ceedling new plinth
 
-in the directory above Plinth. Ceedling prompts for file
-overwrites. You should answer NO in order to use the customized files.
+in the directory above Plinth. Ceedling prompts for file overwrites.
+You should answer NO in order to use the customized files.
