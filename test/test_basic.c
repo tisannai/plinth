@@ -40,7 +40,7 @@ void test_basic( void )
 
     plam_use( &plam, mem, 1024 );
     TEST_ASSERT_EQUAL( 0, plam_used( &plam ) );
-    TEST_ASSERT_EQUAL( 1024 - sizeof( plam_node_s ), plam_free( &plam ) );
+    TEST_ASSERT_EQUAL( 1024 - sizeof( pl_node_s ), plam_free( &plam ) );
     m = plam_get( &plam, 256 );
     TEST_ASSERT_EQUAL( 256, plam_used( &plam ) );
     TEST_ASSERT( m != NULL );
@@ -61,7 +61,7 @@ void test_basic( void )
     plbm_use( &plbm, mem, 124, 8 );
     TEST_ASSERT_EQUAL( 124, plbm_node_size( &plbm ) );
     TEST_ASSERT_EQUAL( 8, plbm_block_size( &plbm ) );
-    TEST_ASSERT_EQUAL( 124 - sizeof( plam_node_s ), plbm_node_capacity( &plbm ) );
+    TEST_ASSERT_EQUAL( 124 - sizeof( pl_node_s ), plbm_node_capacity( &plbm ) );
     plbm_del( &plbm );
 }
 
@@ -321,7 +321,7 @@ void test_plbm( void )
     char*  s2;
     pl_t   mm[ 24 ];
 
-    plbm_new( &plbm, sizeof( plam_node_s ) + 2 * 8, 8 );
+    plbm_new( &plbm, sizeof( pl_node_s ) + 2 * 8, 8 );
     m1 = plbm_get( &plbm );
     TEST_ASSERT( m1 != NULL );
     TEST_ASSERT_EQUAL( pl_true, plbm_is_continuous( &plbm ) );
@@ -340,7 +340,7 @@ void test_plbm( void )
     plbm_del( &plbm );
 
 
-    plbm_use( &plbm, mem, sizeof( plam_node_s ) + 2 * 8, 8 );
+    plbm_use( &plbm, mem, sizeof( pl_node_s ) + 2 * 8, 8 );
     m1 = plbm_get( &plbm );
     TEST_ASSERT( m1 != NULL );
     m2 = plbm_get( &plbm );
@@ -357,7 +357,7 @@ void test_plbm( void )
     plbm_del( &plbm );
 
     /* Test plam_empty* */
-    plbm_empty( &plbm, sizeof( plam_node_s ) + 2 * 8, 8 );
+    plbm_empty( &plbm, sizeof( pl_node_s ) + 2 * 8, 8 );
     m1 = plbm_get( &plbm );
     TEST_ASSERT( m1 != NULL );
     m2 = plbm_get( &plbm );
@@ -374,7 +374,7 @@ void test_plbm( void )
     plbm_del( &plbm );
 
     plam_use( &plam, mem, 1024 );
-    plbm_empty_into_plam( &plbm, &plam, sizeof( plam_node_s ) + 2 * 8, 8 );
+    plbm_empty_into_plam( &plbm, &plam, sizeof( pl_node_s ) + 2 * 8, 8 );
     m1 = plbm_get( &plbm );
     TEST_ASSERT( m1 != NULL );
     m2 = plbm_get( &plbm );
@@ -392,7 +392,7 @@ void test_plbm( void )
     plam_del( &plam );
 
     plbm_use( &plbm2, mem, 1024, 384 );
-    plbm_empty_into_plbm( &plbm, &plbm2, sizeof( plam_node_s ) + 2 * 8 );
+    plbm_empty_into_plbm( &plbm, &plbm2, sizeof( pl_node_s ) + 2 * 8 );
     m1 = plbm_get( &plbm );
     TEST_ASSERT( m1 != NULL );
     m2 = plbm_get( &plbm );
@@ -654,6 +654,105 @@ void test_plcm( void )
     TEST_ASSERT_EQUAL( 128, plcm_used( &plcm ) );
     plcm_put( &plcm, 128 );
     TEST_ASSERT_EQUAL( 0, plcm_used( &plcm ) );
+    plcm_del( &plcm );
+
+}
+
+
+void test_plum( void )
+{
+    plum_s plum;
+
+    plam_s plam;
+    plbm_s plbm;
+    plcm_s plcm;
+
+    char     mem[ 1024 ];
+    pl_t     m[ 24 ];
+
+    char*    s1;
+
+    s1 = "testing...";
+
+    /* Test: Basic Memory Allocations */
+    plum_use( &plum, PL_AA_HEAP, NULL );
+    TEST_ASSERT( plum_type( &plum ) == PL_AA_HEAP );
+    TEST_ASSERT( plum_host( &plum ) == NULL );
+    m[0] = plum_get( &plum, 128 );
+    TEST_ASSERT( m[0] != NULL );
+    plum_put( &plum, m[0], 128 );
+    m[0] = plum_update( &plum, m[0], 128, 256 );
+    TEST_ASSERT( m[0] != NULL );
+
+    /* Test: Arena Memory Allocator */
+    plam_use( &plam, mem, 1024 );
+    plum_use( &plum, PL_AA_PLAM, &plam );
+    TEST_ASSERT( plum_type( &plum ) == PL_AA_PLAM );
+    TEST_ASSERT( plum_host( &plum ) == &plam );
+    m[0] = plum_get( &plum, 128 );
+    TEST_ASSERT( m[0] != NULL );
+    TEST_ASSERT_EQUAL( 128, plam_used( &plam ) );
+    plum_put( &plum, m[0], 128 );
+    TEST_ASSERT_EQUAL( 0, plam_used( &plam ) );
+    for ( int i = 0; i < 10; i++ ) {
+        m[i] = plum_get( &plum, 128 );
+        TEST_ASSERT( m[i] != NULL );
+    }
+    for ( int i = 0; i < 10; i++ ) {
+        plum_put( &plum, m[9-i], 128 );
+        TEST_ASSERT_TRUE( 1 );
+    }
+    plum_put( &plum, m[0], 128 );
+    TEST_ASSERT_TRUE( 1 );
+    m[0] = plum_get( &plum, 128 );
+    strncpy( m[0], s1, 10 );
+    m[0] = plum_update( &plum, m[0], 128, 256 );
+    TEST_ASSERT( !strncmp( s1, m[0], 10 ) );
+    m[1] = plum_get( &plum, 128 );
+    m[2] = plum_update( &plum, m[0], 128, 256 );
+    TEST_ASSERT( m[2] != NULL );
+    TEST_ASSERT( !strncmp( s1, m[2], 10 ) );
+    plam_del( &plam );
+
+    /* Test: Block Memory Allocator */
+    plbm_use( &plbm, mem, 1024, 256 );
+    plum_use( &plum, PL_AA_PLBM, &plbm );
+    TEST_ASSERT( plum_type( &plum ) == PL_AA_PLBM );
+    TEST_ASSERT( plum_host( &plum ) == &plbm );
+    m[0] = plum_get( &plum, 128 );
+    TEST_ASSERT( m[0] != NULL );
+    plum_put( &plum, m[0], 128 );
+    TEST_ASSERT_TRUE( 1 );
+    m[0] = plum_get( &plum, 300 );
+    TEST_ASSERT( m[0] == NULL );
+    m[0] = plum_get( &plum, 128 );
+    m[0] = plum_update( &plum, m[0], 128, 256 );
+    TEST_ASSERT( m[0] != NULL );
+    plbm_del( &plbm );
+
+    /* Test: Continuous Memory Allocator */
+    plcm_use( &plcm, mem, 1024 );
+    plum_use( &plum, PL_AA_PLCM, &plcm );
+    TEST_ASSERT( plum_type( &plum ) == PL_AA_PLCM );
+    TEST_ASSERT( plum_host( &plum ) == &plcm );
+    m[0] = plum_get( &plum, 128 );
+    TEST_ASSERT( m[0] != NULL );
+    TEST_ASSERT_EQUAL( 128, plcm_used( &plcm ) );
+    plum_put( &plum, m[0], 128 );
+    TEST_ASSERT_EQUAL( 0, plcm_used( &plcm ) );
+    for ( int i = 0; i < 10; i++ ) {
+        m[i] = plum_get( &plum, 128 );
+        TEST_ASSERT( m[i] != NULL );
+    }
+    for ( int i = 0; i < 10; i++ ) {
+        plum_put( &plum, m[9-i], 128 );
+        TEST_ASSERT_TRUE( 1 );
+    }
+    plum_put( &plum, m[0], 128 );
+    TEST_ASSERT_TRUE( 1 );
+    m[0] = plum_get( &plum, 128 );
+    m[0] = plum_update( &plum, m[0], 128, 256 );
+    TEST_ASSERT( m[0] != NULL );
     plcm_del( &plcm );
 
 }

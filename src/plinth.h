@@ -198,7 +198,7 @@ pl_enum( pl_aa ){ PL_AA_SELF = 0, PL_AA_HEAP, PL_AA_PLAM, PL_AA_PLBM, PL_AA_PLCM
 /**
  * Arena Memory Allocator Descriptor.
  *
- *        plam_node_s
+ *        pl_node_s
  *       / used mem
  *      / /         ,unused mem
  *     #+++- <-> #+---
@@ -207,20 +207,20 @@ pl_enum( pl_aa ){ PL_AA_SELF = 0, PL_AA_HEAP, PL_AA_PLAM, PL_AA_PLBM, PL_AA_PLCM
  *        node      current node
  *        size
  */
-pl_struct_type( plam_node );
-pl_struct_body( plam_node )
+pl_struct_type( pl_node );
+pl_struct_body( pl_node )
 {
-    plam_node_t prev;      /**< Previous node. */
-    plam_node_t next;      /**< Next node. */
-    pl_size_t   used;      /**< Used count for data. */
-    uint8_t     data[ 0 ]; /**< Data location. */
+    pl_node_t prev;      /**< Previous node. */
+    pl_node_t next;      /**< Next node. */
+    pl_size_t used;      /**< Used count for data. */
+    uint8_t   data[ 0 ]; /**< Data location. */
 };
 pl_struct( plam )
 {
-    plam_node_t node; /**< Current node. */
-    pl_size_t   size; /**< Node size. */
-    pl_aa_t     type; /**< Reservation type. */
-    pl_t        ator; /**< Allocator. */
+    pl_node_t node; /**< Current node. */
+    pl_size_t size; /**< Node size. */
+    pl_aa_t   type; /**< Reservation type. */
+    pl_t      ator; /**< Allocator. */
 };
 
 
@@ -236,13 +236,13 @@ pl_struct( plam )
  */
 pl_struct( plbm )
 {
-    plam_node_t node;  /**< Current node. */
-    pl_t        head;  /**< Block chain head. */
-    pl_size_t   nsize; /**< Node size. */
-    pl_size_t   bsize; /**< Block size. */
-    pl_size_t   itail; /**< Init tail count. */
-    pl_aa_t     type;  /**< Reservation type. */
-    pl_t        ator;  /**< Allocator. */
+    pl_node_t node;  /**< Current node. */
+    pl_t      head;  /**< Block chain head. */
+    pl_size_t nsize; /**< Node size. */
+    pl_size_t bsize; /**< Block size. */
+    pl_size_t itail; /**< Init tail count. */
+    pl_aa_t   type;  /**< Reservation type. */
+    pl_t      ator;  /**< Allocator. */
 };
 
 
@@ -260,6 +260,17 @@ pl_struct( plcm )
     pl_size_t used; /**< Used count for data. */
     pl_t      data; /**< Pointer to data. */
     pl_bool_t debt; /**< Reservation debt? */
+};
+
+
+/**
+ * Unified Memory Allocator Descriptor.
+ *
+ */
+pl_struct( plum )
+{
+    pl_aa_t type; /**< Host allocator type. */
+    pl_t    host; /**< Host handle. */
 };
 
 
@@ -779,7 +790,6 @@ pl_none plbm_del( plbm_t plbm );
  * @brief Get allocation from plbm.
  *
  * @param    plbm   Plbm handle.
- * @param    size   Allocation size.
  *
  * @return Allocation.
  */
@@ -1173,6 +1183,81 @@ pl_t plcm_end( plcm_t plcm );
  * @return True, if plcm is empty.
  */
 pl_bool_t plcm_is_empty( plcm_t plcm );
+
+
+
+/* ------------------------------------------------------------
+ * Unified Memory Allocator:
+ */
+
+/**
+ * @brief Initiate plum with allocator.
+ *
+ * @param    plum   Plum handle.
+ * @param    type   Allocator type.
+ * @param    host   Allocator host (the actual allocator).
+ *
+ * @return None
+ */
+pl_none plum_use( plum_t plum, pl_aa_t type, pl_t host );
+
+
+/**
+ * @brief Get allocation from plum.
+ *
+ * @param    plum   Plum handle.
+ * @param    size   Allocation size.
+ *
+ * @return Allocation
+ */
+pl_t    plum_get( plum_t plum, pl_size_t size );
+
+
+/**
+ * @brief Put allocation back to plum.
+ *
+ * @param    plum   Plum handle.
+ * @param    mem    Allocation pointer.
+ * @param    size   Allocation size.
+ *
+ * @return Address or NULL if no memory was reclaimed.
+ */
+pl_t    plum_put( plum_t plum, pl_t mem, pl_size_t size );
+
+
+/**
+ * @brief Update allocation size in plum.
+ *
+ * Current allocation content is copied to updated allocation.
+ *
+ * @param    plum   Plum handle.
+ * @param    mem    Allocation pointer.
+ * @param    osize  Allocation size of current.
+ * @param    nsize  Allocation size of new.
+ *
+ * @return Updated allocation.
+ */
+pl_t    plum_update( plum_t plum, pl_t mem, pl_size_t osize, pl_size_t nsize );
+
+
+/**
+ * @brief Return plum allocator (host) type.
+ *
+ * @param    plum   Plum handle.
+ *
+ * @return Type.
+ */
+pl_aa_t plum_type( plum_t plum );
+
+
+/**
+ * @brief Return plum allocator (host).
+ *
+ * @param    plum   Plum handle.
+ *
+ * @return Allocator.
+ */
+pl_t    plum_host( plum_t plum );
 
 
 
