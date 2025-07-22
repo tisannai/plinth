@@ -216,6 +216,38 @@ change its size in `plcm` is the last, and obviously the only
 allocation is also the last.
 
 
+## Unified Memory Allocator
+
+`plum` is the Unified Memory Allocator in Plinth. It provides an
+unified interface to the other allocators in Plinth, including the
+Basic Memory Allocation (BMA). The underlying, actual, allocator is
+called a host.
+
+`plum` is created with `plum_use()`. It takes `plum` handle, the
+allocator type and the allocator handle (NULL for BMA) as arguments.
+
+After creation, `plum` allocation functions are ready to be used.
+`plum_get()` gets allocation from the registered host depending on the
+host type. `plum_put()` is used for returning the allocation back.
+`plum_update()` is used to resize a current allocation.
+
+`plum` does not try to overcome all the limitations that the different
+hosts expose. BMA host has no surprises. For `plum_get()`, all hosts
+return the allocation as is, except with `plbm` host the maximum
+allocation size is obviously the size of the `plbm` block.
+
+For `plam` host, `plum_put()` is able to fully utilize the returned
+memory if returns are performed in reverse order to the allocations.
+The same applies to `plcm`. For `plbm` host, the order of returns are
+not significant.
+
+With `plum_update()`, the data in the allocation is retained. If the
+new allocation starts from the same location as the current, no data
+needs copying. If the current location can't be used, the new location
+is taken into use and current data is copied over. The amount of
+copied data is based on the smaller size between current and new size.
+
+
 ## String Storage
 
 `plss` provides a set of functions for storing string data to a

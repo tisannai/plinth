@@ -1118,21 +1118,34 @@ pl_t plum_put( plum_t plum, pl_t mem, pl_size_t size )
 pl_t plum_update( plum_t plum, pl_t mem, pl_size_t osize, pl_size_t nsize )
 {
     switch ( plum->type ) {
+
         case PL_AA_HEAP: {
             return pl_realloc_memory( mem, nsize );
         }
+
         case PL_AA_PLAM:
         case PL_AA_PLBM:
         case PL_AA_PLCM: {
-            pl_t omem;
-            pl_t nmem;
+
+            pl_t      omem;
+            pl_t      nmem;
+            pl_size_t size;
+
             omem = plum_put( plum, mem, osize );
             nmem = plum_get( plum, nsize );
+
             if ( omem != nmem ) {
-                memcpy( nmem, mem, osize );
+                if ( nsize > osize ) {
+                    size = osize;
+                } else {
+                    size = nsize;
+                }
+                memcpy( nmem, mem, size );
             }
+
             return nmem;
         }
+
         // GCOV_EXCL_START
         default:
             return NULL;

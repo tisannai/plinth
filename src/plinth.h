@@ -1210,7 +1210,7 @@ pl_none plum_use( plum_t plum, pl_aa_t type, pl_t host );
  *
  * @return Allocation
  */
-pl_t    plum_get( plum_t plum, pl_size_t size );
+pl_t plum_get( plum_t plum, pl_size_t size );
 
 
 /**
@@ -1222,7 +1222,7 @@ pl_t    plum_get( plum_t plum, pl_size_t size );
  *
  * @return Address or NULL if no memory was reclaimed.
  */
-pl_t    plum_put( plum_t plum, pl_t mem, pl_size_t size );
+pl_t plum_put( plum_t plum, pl_t mem, pl_size_t size );
 
 
 /**
@@ -1237,7 +1237,7 @@ pl_t    plum_put( plum_t plum, pl_t mem, pl_size_t size );
  *
  * @return Updated allocation.
  */
-pl_t    plum_update( plum_t plum, pl_t mem, pl_size_t osize, pl_size_t nsize );
+pl_t plum_update( plum_t plum, pl_t mem, pl_size_t osize, pl_size_t nsize );
 
 
 /**
@@ -1257,7 +1257,7 @@ pl_aa_t plum_type( plum_t plum );
  *
  * @return Allocator.
  */
-pl_t    plum_host( plum_t plum );
+pl_t plum_host( plum_t plum );
 
 
 
