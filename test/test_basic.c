@@ -483,6 +483,7 @@ void test_plcm( void )
     TEST_ASSERT_EQUAL( pl_true, plss_is_empty( &plcm ) );
     plss_append_string( &plcm, s1 );
     TEST_ASSERT( strcmp( s1, plss_string( &plcm ) ) == 0 );
+    TEST_ASSERT_EQUAL( pl_true, plsr_compare( plsr_from_plcm( &plcm ), plsr_from_string( s1 ) ) );
     plss_append_char( &plcm, 'a' );
     TEST_ASSERT( strcmp( "testing...a", plss_string( &plcm ) ) == 0 );
     plss_set( &plcm, plsr_from_string( s1 ) );
@@ -787,9 +788,69 @@ void test_plsr( void )
     s2 = "...testing";
     sr = plsr_from_string( s2 );
     TEST_ASSERT_EQUAL( pl_false, plsr_compare_n( sr, plsr_from_string( s1 ), 8 ) );
+    TEST_ASSERT_EQUAL( pl_false, plsr_is_empty( sr ) );
 
     sr = plsr_null();
     TEST_ASSERT_EQUAL( pl_true, plsr_is_null( sr ) );
+
+    s1 = "";
+    sr = plsr_from_string( s1 );
+    TEST_ASSERT_EQUAL( pl_true, plsr_is_empty( sr ) );
+}
+
+
+void test_file( void )
+{
+    char* filetext = "\
+line1\n\
+line2\n\
+line3\n\
+line4\n\
+line5\n\
+";
+
+    plcm_s wr_text;
+    plcm_s rd_text;
+    char   nulls[ 2 ] = { 0 };
+
+    plss_from_plsr( &wr_text, plsr_from_string( filetext ) );
+    plss_write_file( &wr_text, "test/test_file1.txt" );
+    plcm_empty( &rd_text, 0 );
+    plss_read_file( &rd_text, "test/test_file1.txt" );
+    TEST_ASSERT_EQUAL( pl_true,
+                       plsr_compare( plsr_from_plcm( &wr_text ), plsr_from_plcm( &rd_text ) ) );
+    plcm_del( &wr_text );
+    plcm_del( &rd_text );
+
+    plcm_empty( &wr_text, 0 );
+    plss_append_string( &wr_text, filetext );
+    plcm_empty( &rd_text, 0 );
+    plss_read_file_with_pad( &rd_text, "test/test_file1.txt", 2, 0 );
+    plss_insert( &wr_text, 0, nulls, 2 );
+    TEST_ASSERT_EQUAL( pl_true,
+                       plsr_compare( plsr_from_plcm( &wr_text ), plsr_from_plcm( &rd_text ) ) );
+    plcm_del( &wr_text );
+    plcm_del( &rd_text );
+
+    plsr_s    text;
+    plsr_s    line;
+    pl_size_t prev_offset;
+    pl_size_t offset;
+
+    text = plsr_from_string( filetext );
+    line = plsr_null();
+
+    offset = 0;
+
+    for ( int i = 0; i < 5; i++ ) {
+        prev_offset = offset;
+        line = plsr_next_line( text, &offset );
+        TEST_ASSERT_EQUAL(
+            pl_true,
+            plsr_compare( line, plsr_from_string_and_length( &filetext[ prev_offset ], 5 ) ) );
+    }
+    line = plsr_next_line( text, &offset );
+    TEST_ASSERT_EQUAL( pl_true, plsr_is_null( line ) );
 }
 
 

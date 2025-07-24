@@ -924,7 +924,7 @@ pl_none plcm_use_plbm( plcm_t plcm, plbm_t host );
  *
  * @return None
  */
-pl_none plcm_empty( plcm_t plcm, pl_size_t size );
+plcm_t plcm_empty( plcm_t plcm, pl_size_t size );
 
 
 /**
@@ -1266,6 +1266,17 @@ pl_t plum_host( plum_t plum );
  */
 
 /**
+ * @brief Create plss from plsr.
+ *
+ * @param    plcm   Plcm handle.
+ * @param    plsr   Plsr handle.
+ *
+ * @return None
+ */
+plcm_t plss_from_plsr( plcm_t plcm, plsr_s plsr );
+
+
+/**
  * @brief Append plsr to plcm.
  *
  * @param   plcm   Plcm handle.
@@ -1369,6 +1380,46 @@ pl_none plss_va_format_string( plcm_t plcm, const char* fmt, va_list ap );
 
 
 /**
+ * Read file into an existing plcm and return plcm for file
+ * content.
+ *
+ * @param plcm      Plcm handle.
+ * @param filename  Filename.
+ *
+ * @return Plcm, NULL with failure.
+ */
+plcm_t plss_read_file( plcm_t plcm, const char* filename );
+
+
+/**
+ * Read file into an existing plcm and return plcm for file content
+ * with null padding in the start and end.
+ *
+ * @param plcm      Plcm handle.
+ * @param filename  Filename.
+ * @param left      Start pad.
+ * @param end       End pad.
+ *
+ * @return plcm, NULL with failure.
+ */
+plcm_t plss_read_file_with_pad( plcm_t      plcm,
+                                const char* filename,
+                                pl_size_t   left,
+                                pl_size_t   right );
+
+
+/**
+ * Write plcm content to file.
+ *
+ * @param plcm      Plcm handle.
+ * @param filename  Filename.
+ *
+ * @return plcm, NULL for failure.
+ */
+plcm_t plss_write_file( plcm_t plcm, const char* filename );
+
+
+/**
  * @brief String in plcm.
  *
  * @param   plcm   Plcm handle.
@@ -1408,9 +1459,20 @@ plsr_s plss_ref( plcm_t plcm );
 pl_bool_t plss_is_empty( plcm_t plcm );
 
 
+
 /* ------------------------------------------------------------
  * String Referencing:
  */
+
+/**
+ * @brief Create plsr from plcm.
+ *
+ * @param    plcm   Plcm handle.
+ *
+ * @return Plsr.
+ */
+plsr_s plsr_from_plcm( plcm_t plcm );
+
 
 /**
  * @brief Create plsr from c-string.
@@ -1440,7 +1502,7 @@ plsr_s plsr_from_string_and_length( const char* str, pl_size_t length );
  *
  * @return  String reference.
  */
-const char* plsr_string( plsr_s sr );
+const char* plsr_string( plsr_s plsr );
 
 
 /**
@@ -1450,7 +1512,7 @@ const char* plsr_string( plsr_s sr );
  *
  * @return  String length.
  */
-pl_size_t plsr_length( plsr_s sr );
+pl_size_t plsr_length( plsr_s plsr );
 
 
 /**
@@ -1492,6 +1554,35 @@ plsr_s plsr_null( pl_none );
  * @return True, if plsr is null.
  */
 pl_bool_t plsr_is_null( plsr_s plsr );
+
+
+/**
+ * @brief Is plsr an empty string?
+ *
+ * Empty means that there is a string associated, but length is zero.
+ *
+ * @param    plsr   Plsr handle.
+ *
+ * @return True, if plsr is empty.
+ */
+pl_bool_t plsr_is_empty( plsr_s plsr );
+
+
+
+/**
+ * @brief Return next line content, without the terminating newline.
+ *
+ * The next line is a string reference starting from current offset to
+ * the newline or eof. Offset is updated to be after next newline or
+ * at eof, if eof was encountered.
+ *
+ * @param          plsr   Plsr handle.
+ * @param[in,out]  offset Current offset.
+ *
+ * @return  Plsr to current line, or null for eof.
+ */
+plsr_s plsr_next_line( plsr_s plsr, pl_size_p offset );
+
 
 
 #endif

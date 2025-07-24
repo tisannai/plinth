@@ -11,6 +11,8 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <unistd.h>
 
 #include "plinth.h"
@@ -775,10 +777,11 @@ pl_none plcm_use_plbm( plcm_t plcm, plbm_t host )
 }
 
 
-pl_none plcm_empty( plcm_t plcm, pl_size_t size )
+plcm_t plcm_empty( plcm_t plcm, pl_size_t size )
 {
     plcm__init( plcm );
     plcm->size = size;
+    return plcm;
 }
 
 
@@ -1170,6 +1173,15 @@ pl_t plum_host( plum_t plum )
  * String Storage:
  */
 
+plcm_t plss_from_plsr( plcm_t plcm, plsr_s plsr )
+{
+    plcm__init( plcm );
+    plcm->data = (pl_t)plsr_string( plsr );
+    plcm->used = plsr_length( plsr );
+    return plcm;
+}
+
+
 plcm_t plss_append( plcm_t plcm, plsr_s str )
 {
     plcm_resize( plcm, plcm->used + str.length + 1 );
@@ -1271,6 +1283,73 @@ pl_none plss_va_format_string( plcm_t plcm, const char* fmt, va_list ap )
 }
 
 
+plcm_t plss_read_file( plcm_t plcm, const char* filename )
+{
+    return plss_read_file_with_pad( plcm, filename, 0, 0 );
+}
+
+
+plcm_t plss_read_file_with_pad( plcm_t plcm, const char* filename, pl_size_t left, pl_size_t right )
+{
+    off_t       size;
+    struct stat st;
+
+    if ( stat( filename, &st ) == 0 ) {
+        size = st.st_size;
+    } else {
+        size = -1; // GCOV_EXCL_LINE
+    }
+
+    if ( size < 0 ) {
+        return NULL; // GCOV_EXCL_LINE
+    }
+
+    plcm_resize( plcm, plcm_used( plcm ) + size + left + right + 1 );
+
+    if ( plcm_is_empty( plcm ) ) {
+        return NULL; // GCOV_EXCL_LINE
+    }
+
+    int fd;
+
+    fd = open( filename, O_RDONLY );
+    if ( fd == -1 ) {
+        return NULL; // GCOV_EXCL_LINE
+    }
+
+    char* str;
+
+    str = (char*)plss_string( plcm );
+    read( fd, &str[ left ], size );
+    /* Zero the head. */
+    if ( left > 0 ) {
+        memset( &str[ 0 ], 0, left );
+    }
+    /* Zero the tail. */
+    memset( &str[ size + left ], 0, right + 1 );
+    plcm->used += size + left;
+    close( fd );
+
+    return plcm;
+}
+
+
+plcm_t plss_write_file( plcm_t plcm, const char* filename )
+{
+    int fd;
+
+    //     fd = creat( filename, S_IWUSR | S_IRUSR );
+    fd = creat( filename, 0666 );
+    if ( fd == -1 ) {
+        return NULL; // GCOV_EXCL_LINE
+    }
+    write( fd, plss_string( plcm ), plss_length( plcm ) );
+    close( fd );
+
+    return plcm;
+}
+
+
 const char* plss_string( plcm_t plcm )
 {
     return (const char*)plcm_ref( plcm, 0 );
@@ -1303,6 +1382,15 @@ pl_bool_t plss_is_empty( plcm_t plcm )
  * String Referencing:
  */
 
+plsr_s plsr_from_plcm( plcm_t plcm )
+{
+    plsr_s ret;
+    ret.string = plcm_data( plcm );
+    ret.length = plcm_used( plcm );
+    return ret;
+}
+
+
 plsr_s plsr_from_string( const char* str )
 {
     plsr_s ret;
@@ -1325,15 +1413,15 @@ plsr_s plsr_from_string_and_length( const char* str, pl_size_t length )
 }
 
 
-const char* plsr_string( plsr_s sr )
+const char* plsr_string( plsr_s plsr )
 {
-    return sr.string;
+    return plsr.string;
 }
 
 
-pl_size_t plsr_length( plsr_s sr )
+pl_size_t plsr_length( plsr_s plsr )
 {
-    return sr.length;
+    return plsr.length;
 }
 
 
@@ -1342,7 +1430,7 @@ pl_bool_t plsr_compare( plsr_s p1, plsr_s p2 )
     if ( p1.length != p2.length ) {
         return pl_false;
     } else {
-        if ( !strncmp( p1.string, p2.string, p1.length ) ) {
+        if ( !memcmp( p1.string, p2.string, p1.length ) ) {
             return pl_true;
         } else {
             return pl_false;
@@ -1356,7 +1444,7 @@ pl_bool_t plsr_compare_n( plsr_s p1, plsr_s p2, pl_size_t n )
     if ( ( p1.length < n ) || ( p2.length < n ) ) {
         return pl_false;
     } else {
-        if ( !strncmp( p1.string, p2.string, n ) ) {
+        if ( !memcmp( p1.string, p2.string, n ) ) {
             return pl_true;
         } else {
             return pl_false;
@@ -1377,4 +1465,48 @@ plsr_s plsr_null( pl_none )
 pl_bool_t plsr_is_null( plsr_s plsr )
 {
     return ( plsr.string == NULL );
+}
+
+
+pl_bool_t plsr_is_empty( plsr_s plsr )
+{
+    if ( ( plsr.string != NULL ) && plsr.length == 0 ) {
+        return pl_true;
+    } else {
+        return pl_false;
+    }
+}
+
+
+plsr_s plsr_next_line( plsr_s plsr, pl_size_p offset )
+{
+    pl_size_t   index;
+    pl_size_t   length;
+    const char* string;
+
+    /* Find next newline or eof. */
+    string = plsr_string( plsr );
+    length = plsr_length( plsr );
+    index = *offset;
+
+    if ( index >= length ) {
+        return plsr_null();
+    }
+
+    while ( ( index < length ) && ( string[ index ] != '\n' ) ) {
+        index++;
+    }
+
+    plsr_s ret;
+
+    ret.length = index - *offset;
+    ret.string = &string[ *offset ];
+
+    if ( index < length ) {
+        index++;
+    }
+
+    *offset = index;
+
+    return ret;
 }

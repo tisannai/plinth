@@ -108,7 +108,7 @@ scenarios.
 
 ## Block Memory Allocator
 
-`plbm` is a Block memory allocator. It allocates "small" Blocks of
+`plbm` is a Block Memory Allocator. It allocates "small" Blocks of
 memory with fixed sizes. The Blocks can be allocated and deallocated
 in any order. Under the hood, the deallocated Blocks are maintained in
 a linked list. Head points to the start of the list. Each Block is a
@@ -163,7 +163,7 @@ scenarios.
 
 ## Continuous Memory Allocator
 
-`plcm` is a Continuous memory allocator. `plcm` is used when a
+`plcm` is a Continuous Memory Allocator. `plcm` is used when a
 continuous chunk of memory is required. This is typical for strings
 and other arrays of items.
 
