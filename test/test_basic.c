@@ -3,6 +3,17 @@
 #include <string.h>
 #include <unistd.h>
 
+static int plcm_find_compare( pl_size_t size, const pl_t a, const pl_t b )
+{
+    pl_t a_ref;
+    a_ref = *( (pl_p)a );
+    if ( memcmp( a_ref, b, size ) == 0 ) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
 
 void test_basic( void )
 {
@@ -10,10 +21,9 @@ void test_basic( void )
     plbm_s plbm;
     plcm_s plcm;
 
-    char     mem[ 1024 ];
-    char*    s1;
-    char*    s2;
-    char*    str;
+    char  mem[ 1024 ];
+    char* s1;
+    char* s2;
     pl_pos_t item;
     pl_t     m;
 
@@ -23,6 +33,10 @@ void test_basic( void )
     TEST_ASSERT_EQUAL( 128, plcm_used( &plcm ) );
     plcm_set( &plcm, item, s1, strlen( s1 ) + 1 );
     TEST_ASSERT( strcmp( s1, plcm_ref( &plcm, item ) ) == 0 );
+    plcm_set_ptr( &plcm, item, s1 );
+    TEST_ASSERT( strcmp( s1, plcm_ref_ptr( &plcm, item ) ) == 0 );
+    plcm_clear( &plcm );
+    TEST_ASSERT_EQUAL( 0, plcm_used( &plcm ) );
     plcm_del( &plcm );
 
 
@@ -253,8 +267,10 @@ void test_plam( void )
     plam_new( &plam, 1024 );
     TEST_ASSERT_EQUAL( 0, plam_used( &plam ) );
     m1 = plam_get( &plam, 512 );
+    TEST_ASSERT( m1 != NULL );
     TEST_ASSERT_EQUAL( 512, plam_used( &plam ) );
     m2 = plam_get( &plam, 512 );
+    TEST_ASSERT( m2 != NULL );
     TEST_ASSERT_EQUAL( 512, plam_used( &plam ) );
     plam_put( &plam, 512 );
     plam_put( &plam, 512 );
@@ -312,6 +328,9 @@ void test_plbm( void )
     char*  s1;
     char*  s2;
     pl_t   mm[ 24 ];
+
+    s1 = "testing...";
+    s2 = "testing again...";
 
     plbm_new( &plbm, sizeof( pl_node_s ) + 2 * 8, 8 );
     m1 = plbm_get( &plbm );
@@ -461,25 +480,34 @@ void test_plbm( void )
     }
     plbm_del( &plbm2 );
     plbm_del( &plbm );
+
+    plbm_use( &plbm, mem, 1024, 8 );
+    m1 = plbm_store_ptr( &plbm, s1 );
+    m2 = plbm_store_ptr( &plbm, s2 );
+    plbm_put( &plbm, m1 );
+    s1 = plbm_ref_ptr( &plbm, m2 );
+    TEST_ASSERT_TRUE( !strcmp( s2, s1 ) );
+    plbm_del( &plbm );
 }
 
 
 void test_plcm( void )
 {
-    plcm_s    plcm;
-    plam_s    plam;
-    plbm_s    plbm;
-    char      mem[ 1024 ];
-    pl_t      m;
-    char*     s1;
-    char*     s2;
-    char**    s3;
+    plcm_s plcm;
+    plam_s plam;
+    plbm_s plbm;
+    char   mem[ 1024 ];
+    char* s1;
+    char* s2;
+    char*     s3;
     plsr_s    sr;
     pl_bool_t ret;
+    plcm_s    shadow;
+    pl_pos_t  pos;
 
     s1 = "testing...";
 
-    plcm_new( &plcm, 16 );
+    plcm_new_ptr( &plcm, 2 );
     TEST_ASSERT_EQUAL( pl_true, plss_is_empty( &plcm ) );
     plss_append_string( &plcm, s1 );
     TEST_ASSERT( strcmp( s1, plss_string( &plcm ) ) == 0 );
@@ -541,7 +569,7 @@ void test_plcm( void )
     plcm_reset( &plcm );
     plcm_store( &plcm, s1, 10 );
     TEST_ASSERT( strcmp( s1, plss_string( &plcm ) ) == 0 );
-    TEST_ASSERT_EQUAL( 256, plcm_size( &plcm ) );
+    TEST_ASSERT_EQUAL( 256 / sizeof( pl_t ), plcm_size_ptr( &plcm ) );
     TEST_ASSERT( strcmp( s1, plcm_data( &plcm ) ) == 0 );
     TEST_ASSERT_EQUAL( plcm_data( &plcm ) + plcm_used( &plcm ), plcm_end( &plcm ) );
     plcm_del( &plcm );
@@ -589,46 +617,46 @@ void test_plcm( void )
 
 
     s2 = "again";
-    plcm_empty( &plcm, 4 * sizeof( char* ) );
+    plcm_empty_ptr( &plcm, 4 );
 
-    plcm_store_ptr( &plcm, &s1 );
-    plcm_store_ptr( &plcm, &s2 );
+    plcm_store_ptr( &plcm, s1 );
+    plcm_store_ptr( &plcm, s2 );
     plcm_store_null( &plcm );
 
     s3 = plcm_ref_ptr( &plcm, 0 );
-    TEST_ASSERT( strcmp( s1, *s3 ) == 0 );
+    TEST_ASSERT( strcmp( s1, s3 ) == 0 );
     s3 = plcm_ref_ptr( &plcm, 1 );
-    TEST_ASSERT( strcmp( s2, *s3 ) == 0 );
+    TEST_ASSERT( strcmp( s2, s3 ) == 0 );
     s3 = plcm_ref_ptr( &plcm, 2 );
-    TEST_ASSERT_EQUAL( 0, *s3 );
+    TEST_ASSERT_EQUAL( 0, s3 );
     TEST_ASSERT_EQUAL( 2, plcm_used_ptr( &plcm ) );
 
-    plcm_remove( &plcm, 0, sizeof( void* ) );
+    plcm_remove_ptr( &plcm, 0 );
     s3 = plcm_ref_ptr( &plcm, 0 );
-    TEST_ASSERT( strcmp( s2, *s3 ) == 0 );
+    TEST_ASSERT( strcmp( s2, s3 ) == 0 );
     plcm_store_null( &plcm );
     s3 = plcm_ref_ptr( &plcm, 1 );
-    TEST_ASSERT_EQUAL( 0, *s3 );
+    TEST_ASSERT_EQUAL( 0, s3 );
     TEST_ASSERT_EQUAL( 1, plcm_used_ptr( &plcm ) );
 
-    plcm_insert( &plcm, 0, &s1, sizeof( char* ) );
+    plcm_insert_ptr( &plcm, 0, s1 );
     s3 = plcm_ref_ptr( &plcm, 0 );
-    TEST_ASSERT( strcmp( s1, *s3 ) == 0 );
+    TEST_ASSERT( strcmp( s1, s3 ) == 0 );
     s3 = plcm_ref_ptr( &plcm, 1 );
-    TEST_ASSERT( strcmp( s2, *s3 ) == 0 );
+    TEST_ASSERT( strcmp( s2, s3 ) == 0 );
     s3 = plcm_ref_ptr( &plcm, 2 );
-    TEST_ASSERT_EQUAL( 0, *s3 );
+    TEST_ASSERT_EQUAL( 0, s3 );
 
-    plcm_insert( &plcm, 2 * sizeof( char* ), &s1, sizeof( char* ) );
-    plcm_insert( &plcm, 3 * sizeof( char* ), &s2, sizeof( char* ) );
+    plcm_insert_ptr( &plcm, 2, s1 );
+    plcm_insert_ptr( &plcm, 3, s2 );
     s3 = plcm_ref_ptr( &plcm, 0 );
-    TEST_ASSERT( strcmp( s1, *s3 ) == 0 );
+    TEST_ASSERT( strcmp( s1, s3 ) == 0 );
     s3 = plcm_ref_ptr( &plcm, 1 );
-    TEST_ASSERT( strcmp( s2, *s3 ) == 0 );
+    TEST_ASSERT( strcmp( s2, s3 ) == 0 );
     s3 = plcm_ref_ptr( &plcm, 2 );
-    TEST_ASSERT( strcmp( s1, *s3 ) == 0 );
+    TEST_ASSERT( strcmp( s1, s3 ) == 0 );
     s3 = plcm_ref_ptr( &plcm, 3 );
-    TEST_ASSERT( strcmp( s2, *s3 ) == 0 );
+    TEST_ASSERT( strcmp( s2, s3 ) == 0 );
 
     ret = plcm_terminate_ptr( &plcm );
     TEST_ASSERT_EQUAL( pl_false, ret );
@@ -646,6 +674,44 @@ void test_plcm( void )
     TEST_ASSERT_EQUAL( 128, plcm_used( &plcm ) );
     plcm_put( &plcm, 128 );
     TEST_ASSERT_EQUAL( 0, plcm_used( &plcm ) );
+    plcm_del( &plcm );
+
+
+    /* Test shadow and compact. */
+    plcm_new( &plcm, 16 );
+    s1 = "testing...";
+    plss_append_string( &plcm, s1 );
+    TEST_ASSERT_TRUE( !strcmp( s1, plss_string( &plcm ) ) );
+    TEST_ASSERT_EQUAL( strlen( s1 ), plcm_used( &plcm ) );
+    TEST_ASSERT_EQUAL( 16, plcm_size( &plcm ) );
+    shadow = plcm_shadow( &plcm );
+    TEST_ASSERT_TRUE( !strcmp( s1, plss_string( &shadow ) ) );
+    plss_compact( &plcm );
+    TEST_ASSERT_EQUAL( strlen( s1 ), plcm_used( &plcm ) );
+    TEST_ASSERT_EQUAL( strlen( s1 ) + 1, plcm_size( &plcm ) );
+    s3 = "newstr";
+    strcpy( (char*)plss_string( &plcm ), s3 );
+    plss_refresh( &plcm );
+    TEST_ASSERT_TRUE( !strcmp( s3, plss_string( &plcm ) ) );
+    plcm_del( &plcm );
+
+
+    /* Test find funcs. */
+    s1 = "testing...";
+    s2 = "testing more...";
+    plcm_new_ptr( &plcm, 16 );
+    plcm_store_ptr( &plcm, s2 );
+    plcm_store_ptr( &plcm, s1 );
+    TEST_ASSERT_EQUAL( 16, plcm_size_ptr( &plcm ) );
+    TEST_ASSERT_EQUAL( 2, plcm_used_ptr( &plcm ) );
+    pos = plcm_find_ptr( &plcm, s1 );
+    TEST_ASSERT_TRUE( !strcmp( s1, plcm_ref_ptr( &plcm, pos ) ) );
+    pos = plcm_find_ptr( &plcm, s3 );
+    TEST_ASSERT_EQUAL( -1, pos );
+    pos = plcm_find_with( &plcm, plcm_find_compare, sizeof( char* ), s1 );
+    TEST_ASSERT_TRUE( !strcmp( s1, plcm_ref_ptr( &plcm, pos ) ) );
+    pos = plcm_find_with( &plcm, plcm_find_compare, sizeof( char* ), s3 );
+    TEST_ASSERT_EQUAL( -1, pos );
     plcm_del( &plcm );
 }
 

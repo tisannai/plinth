@@ -12,6 +12,7 @@
  */
 
 
+#include <stdlib.h>
 #include <stdint.h>
 #include <stdarg.h>
 
@@ -27,6 +28,8 @@
     typedef type##_t* type##_p;
 
 
+/** Function pointer type definition. */
+#define pl_fn_type( name, rettype, ... ) typedef rettype ( *name##_fn_t )( __VA_ARGS__ );
 
 /* ------------------------------------------------------------
  * Structure type definitions.
@@ -60,17 +63,19 @@
     typedef name##_s**            name##_p; \
     struct name##struct_s
 
+/** Forward-declaration of struct and friends. */
 #define pl_struct_type( name )              \
     typedef struct name##struct_s name##_s; \
     typedef name##_s*             name##_t; \
     typedef name##_s**            name##_p;
 
+/** Post-declaration of struct body. */
 #define pl_struct_body( name ) struct name##struct_s
 
 
 /**
  * Define enumeration and corresponding type. An enum is created as
- * <enum>_e, a typedef is created as <enum>_t.
+ * {enum}_e, a typedef is created as {enum}_t.
  *
  * Example:
  * @code
@@ -123,6 +128,7 @@ pl_type( uint64_t, pl_size ); /**< Size of allocation type. */
 pl_type( int64_t, pl_ssize ); /**< Signed size of allocation type. */
 pl_type( int64_t, pl_pos );   /**< Position in array. */
 pl_type( uint64_t, pl_id );   /**< Identification number type. */
+pl_type( uint64_t, pl_hash ); /**< Identification number type. */
 
 
 /** Nil pointer. */
@@ -186,13 +192,14 @@ pl_none pl_ui_do( pl_ui_t ui, pl_t argi, pl_t argo );
  * Memory allocation.
  */
 
-/* Align size (up) to multiple of alignment. */
+/** Align size (up) to multiple of alignment. */
 #define PLINTH_ALIGN_TO( size, alignment ) \
     ( ( ( ( size ) + ( alignment ) - 1 ) / ( alignment ) ) * ( alignment ) )
 
 
 /** Allocator affinity type. */
-pl_enum( pl_aa ){ PL_AA_SELF = 0, PL_AA_HEAP, PL_AA_PLAM, PL_AA_PLBM, PL_AA_PLCM };
+pl_enum( pl_aa ){ PL_AA_NONE = 0, PL_AA_SELF, PL_AA_HEAP, PL_AA_PLAM,
+                  PL_AA_PLBM,     PL_AA_PLCM, PL_AA_DESC };
 
 
 /**
@@ -259,8 +266,14 @@ pl_struct( plcm )
     pl_size_t size; /**< Reservation size for data. */
     pl_size_t used; /**< Used count for data. */
     pl_t      data; /**< Pointer to data. */
-    pl_bool_t debt; /**< Reservation debt? */
+    pl_aa_t   type; /**< Reservation type. */
 };
+
+/**
+ * Plcm find, compare function type. Compare function should return 1
+ * for match.
+ */
+pl_fn_type( plcm_compare, int, pl_size_t size, const pl_t a, const pl_t b );
 
 
 /**
@@ -296,24 +309,28 @@ pl_struct( plsr )
  * Access macros with type abstraction.
  */
 
+/** \cond */
+
 #define pl_alloc_memory_for_type( type ) pl_alloc_memory( sizeof( type ) )
 
 #define plam_get_for_type( plam, type ) plam_get( ( plam ), sizeof( type ) )
 #define plam_put_for_type( plam, type ) plam_put( ( plam ), sizeof( type ) )
 
-#define plcm_get_pos_for_type( plam, type ) plcm_get_pos( ( plam ), sizeof( type ) )
-#define plcm_get_ref_for_type( plam, type ) plcm_get_ref( ( plam ), sizeof( type ) )
-#define plcm_put_for_type( plam, type ) plcm_put( ( plam ), sizeof( type ) )
-#define plcm_store_for_type( plam, data, type ) plcm_store( ( plam ), ( data ), sizeof( type ) )
-#define plcm_ref_for_type( plam, pos, type ) plcm_ref( ( plam ), ( pos ) * sizeof( type ) )
-#define plcm_set_for_type( plam, pos, data, type ) \
+#define plcm_get_pos_for_type( plcm, type ) plcm_get_pos( ( plcm ), sizeof( type ) )
+#define plcm_get_ref_for_type( plcm, type ) plcm_get_ref( ( plcm ), sizeof( type ) )
+#define plcm_put_for_type( plcm, type ) plcm_put( ( plcm ), sizeof( type ) )
+#define plcm_store_for_type( plcm, data, type ) plcm_store( ( plcm ), ( data ), sizeof( type ) )
+#define plcm_ref_for_type( plcm, pos, type ) plcm_ref( ( plcm ), ( pos ) * sizeof( type ) )
+#define plcm_set_for_type( plcm, pos, data, type ) \
     plcm_set( ( plcm ), ( pos ), ( data ), sizeof( type ) )
-#define plcm_terminate_for_type( plam, type ) plcm_terminate( ( plam ), sizeof( type ) )
-#define plcm_used_for_type( plam, type ) ( plcm_used( ( plam ) ) / sizeof( type ) )
+#define plcm_terminate_for_type( plcm, type ) plcm_terminate( ( plcm ), sizeof( type ) )
+#define plcm_used_for_type( plcm, type ) ( plcm_used( ( plcm ) ) / sizeof( type ) )
 
-/*
-  Declare stack local plcm with "name" and reserve array, with
-  "size", for storage.
+/** \endcond */
+
+/**
+ * Declare stack local plcm with "name" and reserve array, with
+ * "size", for storage.
  */
 #define plss_use( name, size )              \
     plcm_s name;                            \
@@ -321,19 +338,36 @@ pl_struct( plsr )
     plcm_use( &name, name##_plss_declare, ( size ) )
 
 
+/** Iterate over all items. */
+#define plcm_each_ptr( plcm, iter, cast )                             \
+    for ( pl_size_t plcm_each_ptr_index = 0;                          \
+          ( plcm_each_ptr_index < plcm_used_ptr( plcm ) ) &&          \
+          ( iter = (cast)plcm_ref_ptr( plcm, plcm_each_ptr_index ) ); \
+          plcm_each_ptr_index++ )
+
 
 /* ------------------------------------------------------------
  * Basic (heap) memory allocation:
  */
 
 /**
- * @brief Allocate memory from heap.
+ * @brief Allocate memory from heap (zeroed).
  *
  * @param   size   Allocation size in bytes.
  *
  * @return  Pointer to allocation, or NULL.
  */
 pl_t pl_alloc_memory( pl_size_t size );
+
+
+/**
+ * @brief Allocate memory from heap (non-zeroed).
+ *
+ * @param   size   Allocation size in bytes.
+ *
+ * @return  Pointer to allocation, or NULL.
+ */
+pl_t pl_alloc_only( pl_size_t size );
 
 
 /**
@@ -385,6 +419,16 @@ char* pl_alloc_string( const char* str );
 char* pl_format_string( const char* fmt, ... );
 
 
+/**
+ * @brief Allocate memory from heap (zeroed).
+ *
+ * @param   size   Allocation size in bytes.
+ *
+ * @return  Pointer to allocation, or NULL.
+ */
+pl_t pl_clear_memory( pl_t mem, pl_size_t size );
+
+
 
 /* ------------------------------------------------------------
  * Arena Memory Allocator:
@@ -396,7 +440,7 @@ char* pl_format_string( const char* fmt, ... );
  * @param    plam   Plam handle.
  * @param    size   Node size.
  *
- * @return None
+ * @return None.
  */
 pl_none plam_new( plam_t plam, pl_size_t size );
 
@@ -408,7 +452,7 @@ pl_none plam_new( plam_t plam, pl_size_t size );
  * @param    node   Node.
  * @param    size   Node size.
  *
- * @return None
+ * @return None.
  */
 pl_none plam_use( plam_t plam, pl_t node, pl_size_t size );
 
@@ -420,7 +464,7 @@ pl_none plam_use( plam_t plam, pl_t node, pl_size_t size );
  * @param    host   Plam handle.
  * @param    size   Node size.
  *
- * @return None
+ * @return None.
  */
 pl_none plam_use_plam( plam_t plam, plam_t host, pl_size_t size );
 
@@ -431,7 +475,7 @@ pl_none plam_use_plam( plam_t plam, plam_t host, pl_size_t size );
  * @param    plam   Nested plam handle.
  * @param    host   Plbm handle.
  *
- * @return None
+ * @return None.
  */
 pl_none plam_use_plbm( plam_t plam, plbm_t host );
 
@@ -443,7 +487,7 @@ pl_none plam_use_plbm( plam_t plam, plbm_t host );
  * @param    host   Plam handle.
  * @param    size   Node size.
  *
- * @return None
+ * @return None.
  */
 pl_none plam_into_plam( plam_t plam, plam_t host, pl_size_t size );
 
@@ -454,7 +498,7 @@ pl_none plam_into_plam( plam_t plam, plam_t host, pl_size_t size );
  * @param    plam   Nested plam handle.
  * @param    host   Plbm handle.
  *
- * @return None
+ * @return None.
  */
 pl_none plam_into_plbm( plam_t plam, plbm_t host );
 
@@ -469,7 +513,7 @@ pl_none plam_into_plbm( plam_t plam, plbm_t host );
  * @param    plam   Plam handle.
  * @param    size   Node size.
  *
- * @return None
+ * @return None.
  */
 pl_none plam_empty( plam_t plam, pl_size_t size );
 
@@ -485,7 +529,7 @@ pl_none plam_empty( plam_t plam, pl_size_t size );
  * @param    host   Plam handle.
  * @param    size   Node size.
  *
- * @return None
+ * @return None.
  */
 pl_none plam_empty_into_plam( plam_t plam, plam_t host, pl_size_t size );
 
@@ -500,7 +544,7 @@ pl_none plam_empty_into_plam( plam_t plam, plam_t host, pl_size_t size );
  * @param    plam   Plam handle.
  * @param    host   Plbm handle.
  *
- * @return None
+ * @return None.
  */
 pl_none plam_empty_into_plbm( plam_t plam, plbm_t host );
 
@@ -513,7 +557,7 @@ pl_none plam_empty_into_plbm( plam_t plam, plbm_t host );
  *
  * @param    plam   Plam handle.
  *
- * @return None
+ * @return None.
  */
 pl_none plam_del( plam_t plam );
 
@@ -538,7 +582,7 @@ pl_t plam_get( plam_t plam, pl_size_t size );
  * @param    plam   Plam handle.
  * @param    size   Allocation size.
  *
- * @return None
+ * @return None.
  */
 pl_none plam_put( plam_t plam, pl_size_t size );
 
@@ -650,7 +694,7 @@ pl_bool_t plam_is_empty( plam_t plam );
  * @param    nsize  Node size.
  * @param    bsize  Block size.
  *
- * @return None
+ * @return None.
  */
 pl_none plbm_new( plbm_t plbm, pl_size_t nsize, pl_size_t bsize );
 
@@ -663,7 +707,7 @@ pl_none plbm_new( plbm_t plbm, pl_size_t nsize, pl_size_t bsize );
  * @param    nsize  Node size.
  * @param    bsize  Block size.
  *
- * @return None
+ * @return None.
  */
 pl_none plbm_use( plbm_t plbm, pl_t node, pl_size_t nsize, pl_size_t bsize );
 
@@ -676,7 +720,7 @@ pl_none plbm_use( plbm_t plbm, pl_t node, pl_size_t nsize, pl_size_t bsize );
  * @param    nsize  Node size.
  * @param    bsize  Block size.
  *
- * @return None
+ * @return None.
  */
 pl_none plbm_use_plam( plbm_t plbm, plam_t host, pl_size_t nsize, pl_size_t bsize );
 
@@ -688,10 +732,9 @@ pl_none plbm_use_plam( plbm_t plbm, plam_t host, pl_size_t nsize, pl_size_t bsiz
  *
  * @param    plbm   Nested plbm handle.
  * @param    host   Plbm handle.
- * @param    nsize  Node size.
  * @param    bsize  Block size.
  *
- * @return None
+ * @return None.
  */
 pl_none plbm_use_plbm( plbm_t plbm, plbm_t host, pl_size_t bsize );
 
@@ -704,7 +747,7 @@ pl_none plbm_use_plbm( plbm_t plbm, plbm_t host, pl_size_t bsize );
  * @param    nsize  Node size.
  * @param    bsize  Block size.
  *
- * @return None
+ * @return None.
  */
 pl_none plbm_into_plam( plbm_t plbm, plam_t host, pl_size_t nsize, pl_size_t bsize );
 
@@ -718,7 +761,7 @@ pl_none plbm_into_plam( plbm_t plbm, plam_t host, pl_size_t nsize, pl_size_t bsi
  * @param    host   Plbm handle.
  * @param    bsize  Block size.
  *
- * @return None
+ * @return None.
  */
 pl_none plbm_into_plbm( plbm_t plbm, plbm_t host, pl_size_t bsize );
 
@@ -733,7 +776,7 @@ pl_none plbm_into_plbm( plbm_t plbm, plbm_t host, pl_size_t bsize );
  * @param    nsize  Node size.
  * @param    bsize  Block size.
  *
- * @return None
+ * @return None.
  */
 pl_none plbm_empty( plbm_t plbm, pl_size_t nsize, pl_size_t bsize );
 
@@ -750,7 +793,7 @@ pl_none plbm_empty( plbm_t plbm, pl_size_t nsize, pl_size_t bsize );
  * @param    nsize  Node size.
  * @param    bsize  Block size.
  *
- * @return None
+ * @return None.
  */
 pl_none plbm_empty_into_plam( plbm_t plbm, plam_t host, pl_size_t nsize, pl_size_t bsize );
 
@@ -768,7 +811,7 @@ pl_none plbm_empty_into_plam( plbm_t plbm, plam_t host, pl_size_t nsize, pl_size
  * @param    host   Plbm handle.
  * @param    bsize  Block size.
  *
- * @return None
+ * @return None.
  */
 pl_none plbm_empty_into_plbm( plbm_t plbm, plbm_t host, pl_size_t bsize );
 
@@ -781,7 +824,7 @@ pl_none plbm_empty_into_plbm( plbm_t plbm, plbm_t host, pl_size_t bsize );
  *
  * @param    plbm   Plbm handle.
  *
- * @return None
+ * @return None.
  */
 pl_none plbm_del( plbm_t plbm );
 
@@ -799,15 +842,34 @@ pl_t plbm_get( plbm_t plbm );
 /**
  * @brief Put allocation back to plbm.
  *
- * User is responsible in making the puts in reserver order with
- * correct sizes.
- *
  * @param    plbm   Plbm handle.
- * @param    size   Allocation size.
+ * @param    block  Block to return.
  *
- * @return None
+ * @return None.
  */
 pl_none plbm_put( plbm_t plbm, pl_t block );
+
+
+/**
+ * @brief Allocate storage for pointer and store its value.
+ *
+ * @param    plbm   Plbm handle.
+ * @param    ptr    Pointer to store.
+ *
+ * @return Storage address of the pointer.
+ */
+pl_t plbm_store_ptr( plbm_t plbm, pl_t ptr );
+
+
+/**
+ * @brief Reference pointer value from the given storage address.
+ *
+ * @param    plbm    Plbm handle.
+ * @param    storage Storage address of the pointer.
+ *
+ * @return Pointer value.
+ */
+pl_t plbm_ref_ptr( plbm_t plbm, pl_t storage );
 
 
 /**
@@ -873,9 +935,20 @@ pl_bool_t plbm_is_empty( plbm_t plbm );
  * @param    plcm   Plcm handle.
  * @param    size   Allocation size.
  *
- * @return None
+ * @return Plcm handle.
  */
-pl_none plcm_new( plcm_t plcm, pl_size_t size );
+plcm_t plcm_new( plcm_t plcm, pl_size_t size );
+
+
+/**
+ * @brief Create plcm in heap (with debt) for pointers.
+ *
+ * @param    plcm   Plcm handle.
+ * @param    size   Allocation size for number pointers.
+ *
+ * @return Plcm handle.
+ */
+plcm_t plcm_new_ptr( plcm_t plcm, pl_size_t size );
 
 
 /**
@@ -885,9 +958,9 @@ pl_none plcm_new( plcm_t plcm, pl_size_t size );
  * @param    mem    Allocation.
  * @param    size   Size of allocation.
  *
- * @return None
+ * @return Plcm handle.
  */
-pl_none plcm_use( plcm_t plcm, pl_t mem, pl_size_t size );
+plcm_t plcm_use( plcm_t plcm, pl_t mem, pl_size_t size );
 
 
 /**
@@ -897,9 +970,9 @@ pl_none plcm_use( plcm_t plcm, pl_t mem, pl_size_t size );
  * @param    host   Plam handle.
  * @param    size   Allocation size.
  *
- * @return None
+ * @return Plcm handle.
  */
-pl_none plcm_use_plam( plcm_t plcm, plam_t host, pl_size_t size );
+plcm_t plcm_use_plam( plcm_t plcm, plam_t host, pl_size_t size );
 
 
 /**
@@ -908,9 +981,9 @@ pl_none plcm_use_plam( plcm_t plcm, plam_t host, pl_size_t size );
  * @param    plcm   Nested plcm handle.
  * @param    host   Plbm handle.
  *
- * @return None
+ * @return Plcm handle.
  */
-pl_none plcm_use_plbm( plcm_t plcm, plbm_t host );
+plcm_t plcm_use_plbm( plcm_t plcm, plbm_t host );
 
 
 /**
@@ -922,9 +995,33 @@ pl_none plcm_use_plbm( plcm_t plcm, plbm_t host );
  * @param    plcm   Plcm handle.
  * @param    size   Allocation size (for future).
  *
- * @return None
+ * @return Plcm handle.
  */
 plcm_t plcm_empty( plcm_t plcm, pl_size_t size );
+
+
+/**
+ * @brief Create empty plcm for pointers.
+ *
+ * Empty plcm is a placeholder with handle setup for allocations.
+ * However, no heap allocations are made at creation.
+ *
+ * @param    plcm   Plcm handle.
+ * @param    size   Allocation size (for future) for pointers.
+ *
+ * @return Plcm handle.
+ */
+plcm_t plcm_empty_ptr( plcm_t plcm, pl_size_t size );
+
+
+/**
+ * Convert Plcm to Plcm Shadow.
+ *
+ * @param plcm Plcm handle.
+ *
+ * @return Shadow, referencing the host.
+ */
+plcm_s plcm_shadow( plcm_t plcm );
 
 
 /**
@@ -935,9 +1032,9 @@ plcm_t plcm_empty( plcm_t plcm, pl_size_t size );
  *
  * @param    plcm   Plcm handle.
  *
- * @return None
+ * @return NULL.
  */
-pl_none plcm_del( plcm_t plcm );
+plcm_t plcm_del( plcm_t plcm );
 
 
 /**
@@ -946,9 +1043,19 @@ pl_none plcm_del( plcm_t plcm );
  * @param    plcm   Plcm handle.
  * @param    size   New allocation size.
  *
- * @return None
+ * @return None.
  */
 pl_none plcm_resize( plcm_t plcm, pl_size_t size );
+
+
+/**
+ * @brief Compact plcm allocation to minimum size.
+ *
+ * @param    plcm   Plcm handle.
+ *
+ * @return None.
+ */
+pl_none plcm_compact( plcm_t plcm );
 
 
 /**
@@ -984,7 +1091,7 @@ pl_t plcm_get_ref( plcm_t plcm, pl_size_t size );
  * @param    plcm   Plcm handle.
  * @param    size   Allocation size.
  *
- * @return None
+ * @return None.
  */
 pl_none plcm_put( plcm_t plcm, pl_size_t size );
 
@@ -1005,11 +1112,11 @@ pl_pos_t plcm_store( plcm_t plcm, pl_t data, pl_size_t size );
  * @brief Get allocation from plcm and store pointer value to it.
  *
  * @param    plcm     Plcm handle.
- * @param    ptraddr  Address of the pointer.
+ * @param    ptr      Pointer value.
  *
  * @return Allocation position.
  */
-pl_pos_t plcm_store_ptr( plcm_t plcm, pl_t ptraddr );
+pl_pos_t plcm_store_ptr( plcm_t plcm, pl_t ptr );
 
 
 /**
@@ -1039,7 +1146,7 @@ pl_t plcm_ref( plcm_t plcm, pl_pos_t pos );
  * @param    plcm   Plcm handle.
  * @param    pos    Pointer position.
  *
- * @return Allocation reference.
+ * @return Pointer value.
  */
 pl_t plcm_ref_ptr( plcm_t plcm, pl_pos_t pos );
 
@@ -1049,12 +1156,24 @@ pl_t plcm_ref_ptr( plcm_t plcm, pl_pos_t pos );
  *
  * @param    plcm   Plcm handle.
  * @param    pos    Allocation position.
- * @param    data   Data to store.
+ * @param    data   Address of data to store.
  * @param    size   Data size.
  *
  * @return None.
  */
-pl_none plcm_set( plcm_t plcm, pl_pos_t pos, pl_t data, pl_size_t size );
+pl_none plcm_set( plcm_t plcm, pl_pos_t pos, const pl_t data, pl_size_t size );
+
+
+/**
+ * @brief Set pointer value to pointer position.
+ *
+ * @param    plcm   Plcm handle.
+ * @param    pos    Pointer position.
+ * @param    ptr    Pointer value.
+ *
+ * @return None.
+ */
+pl_none plcm_set_ptr( plcm_t plcm, pl_pos_t pos, const pl_t ptr );
 
 
 /**
@@ -1070,6 +1189,17 @@ pl_none plcm_remove( plcm_t plcm, pl_pos_t pos, pl_size_t size );
 
 
 /**
+ * @brief Remove pointer.
+ *
+ * @param    plcm   Plcm handle.
+ * @param    pos    Pointer position of removal.
+ *
+ * @return None.
+ */
+pl_none plcm_remove_ptr( plcm_t plcm, pl_pos_t pos );
+
+
+/**
  * @brief Insert data.
  *
  * @param    plcm   Plcm handle.
@@ -1080,6 +1210,18 @@ pl_none plcm_remove( plcm_t plcm, pl_pos_t pos, pl_size_t size );
  * @return None.
  */
 pl_none plcm_insert( plcm_t plcm, pl_pos_t pos, pl_t data, pl_size_t size );
+
+
+/**
+ * @brief Insert pointer.
+ *
+ * @param    plcm   Plcm handle.
+ * @param    pos    Pointer position of insertion.
+ * @param    ptr    Pointer value.
+ *
+ * @return None.
+ */
+pl_none plcm_insert_ptr( plcm_t plcm, pl_pos_t pos, pl_t ptr );
 
 
 /**
@@ -1116,6 +1258,16 @@ pl_none plcm_reset( plcm_t plcm );
 
 
 /**
+ * @brief Reset used data to zero and clear data.
+ *
+ * @param    plcm   Plcm handle.
+ *
+ * @return None.
+ */
+pl_none plcm_clear( plcm_t plcm );
+
+
+/**
  * @brief Used memory size.
  *
  * @param    plcm   Plcm handle.
@@ -1143,6 +1295,16 @@ pl_size_t plcm_used_ptr( plcm_t plcm );
  * @return Allocation size.
  */
 pl_size_t plcm_size( plcm_t plcm );
+
+
+/**
+ * @brief Allocated memory size as pointers.
+ *
+ * @param    plcm   Plcm handle.
+ *
+ * @return Allocation size as pointers.
+ */
+pl_size_t plcm_size_ptr( plcm_t plcm );
 
 
 /**
@@ -1185,6 +1347,29 @@ pl_t plcm_end( plcm_t plcm );
 pl_bool_t plcm_is_empty( plcm_t plcm );
 
 
+/**
+ * @brief Find pointer from plcm.
+ *
+ * @param    plcm   Plcm handle.
+ * @param    ref    Pointer to find.
+ *
+ * @return Index, or -1 for not found.
+ */
+pl_pos_t plcm_find_ptr( plcm_t plcm, pl_t ref );
+
+
+/**
+ * @brief Find object from plcm.
+ *
+ * @param    plcm    Plcm handle.
+ * @param    compare Comparison function.
+ * @param    size    Item size in bytes.
+ * @param    ref     Pointer for reference.
+ *
+ * @return Index, or -1 for not found.
+ */
+pl_pos_t plcm_find_with( plcm_t plcm, plcm_compare_fn_t compare, pl_size_t size, pl_t ref );
+
 
 /* ------------------------------------------------------------
  * Unified Memory Allocator:
@@ -1197,7 +1382,7 @@ pl_bool_t plcm_is_empty( plcm_t plcm );
  * @param    type   Allocator type.
  * @param    host   Allocator host (the actual allocator).
  *
- * @return None
+ * @return None.
  */
 pl_none plum_use( plum_t plum, pl_aa_t type, pl_t host );
 
@@ -1208,7 +1393,7 @@ pl_none plum_use( plum_t plum, pl_aa_t type, pl_t host );
  * @param    plum   Plum handle.
  * @param    size   Allocation size.
  *
- * @return Allocation
+ * @return Allocation.
  */
 pl_t plum_get( plum_t plum, pl_size_t size );
 
@@ -1271,7 +1456,7 @@ pl_t plum_host( plum_t plum );
  * @param    plcm   Plcm handle.
  * @param    plsr   Plsr handle.
  *
- * @return None
+ * @return None.
  */
 plcm_t plss_from_plsr( plcm_t plcm, plsr_s plsr );
 
@@ -1346,6 +1531,29 @@ plcm_t plss_set( plcm_t plcm, plsr_s str );
 
 
 /**
+ * Refresh string length of plcm.
+ *
+ * Useful when some function has filled string content and it should
+ * be in sync with the Plcm itself.
+ *
+ * @param plcm Plcm handle.
+ *
+ * @return Plcm.
+ */
+plcm_t plss_refresh( plcm_t plcm );
+
+
+/**
+ * @brief Compact plss (pclm) allocation to minimum size.
+ *
+ * @param    plcm   Plcm handle.
+ *
+ * @return None.
+ */
+plcm_t plss_compact( plcm_t plcm );
+
+
+/**
  * @brief Format string to plcm, append.
  *
  * @param   plcm   Plcm handle.
@@ -1398,7 +1606,7 @@ plcm_t plss_read_file( plcm_t plcm, const char* filename );
  * @param plcm      Plcm handle.
  * @param filename  Filename.
  * @param left      Start pad.
- * @param end       End pad.
+ * @param right     End pad.
  *
  * @return plcm, NULL with failure.
  */
@@ -1566,7 +1774,6 @@ pl_bool_t plsr_is_null( plsr_s plsr );
  * @return True, if plsr is empty.
  */
 pl_bool_t plsr_is_empty( plsr_s plsr );
-
 
 
 /**
