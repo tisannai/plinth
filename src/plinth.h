@@ -420,8 +420,9 @@ char* pl_format_string( const char* fmt, ... );
 
 
 /**
- * @brief Allocate memory from heap (zeroed).
+ * @brief Clear memory area.
  *
+ * @param   mem    Pointer to allocation.
  * @param   size   Allocation size in bytes.
  *
  * @return  Pointer to allocation, or NULL.

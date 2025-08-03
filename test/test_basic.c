@@ -21,9 +21,9 @@ void test_basic( void )
     plbm_s plbm;
     plcm_s plcm;
 
-    char  mem[ 1024 ];
-    char* s1;
-    char* s2;
+    char     mem[ 1024 ];
+    char*    s1;
+    char*    s2;
     pl_pos_t item;
     pl_t     m;
 
@@ -493,12 +493,12 @@ void test_plbm( void )
 
 void test_plcm( void )
 {
-    plcm_s plcm;
-    plam_s plam;
-    plbm_s plbm;
-    char   mem[ 1024 ];
-    char* s1;
-    char* s2;
+    plcm_s    plcm;
+    plam_s    plam;
+    plbm_s    plbm;
+    char      mem[ 1024 ];
+    char*     s1;
+    char*     s2;
     char*     s3;
     plsr_s    sr;
     pl_bool_t ret;
