@@ -1512,12 +1512,17 @@ plcm_t plss_write_file( plcm_t plcm, const char* filename )
 {
     int fd;
 
-    fd = creat( filename, 0666 );
-    if ( fd == -1 ) {
-        return NULL; // GCOV_EXCL_LINE
+    if ( filename ) {
+        fd = creat( filename, 0666 );
+        if ( fd == -1 ) {
+            return NULL; // GCOV_EXCL_LINE
+        }
+        write( fd, plss_string( plcm ), plss_length( plcm ) );
+        close( fd );
+    } else {
+        fd = STDOUT_FILENO;
+        write( fd, plss_string( plcm ), plss_length( plcm ) );
     }
-    write( fd, plss_string( plcm ), plss_length( plcm ) );
-    close( fd );
 
     return plcm;
 }

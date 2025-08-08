@@ -9,5 +9,8 @@ if test -z "$install_root"; then
 fi
 
 # Perform installation under installation directory.
+mkdir -p ${install_root}/lib
 cp build/libplinth.so ${install_root}/lib
+
+mkdir -p ${install_root}/include
 cp src/plinth.h ${install_root}/include
