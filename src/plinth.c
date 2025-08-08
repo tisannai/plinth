@@ -1484,7 +1484,8 @@ plcm_t plss_read_file_with_pad( plcm_t plcm, const char* filename, pl_size_t lef
             }
             str = plcm->data;
             cnt = read( fd, &str[ pos ], pagesize );
-            if ( cnt == -1 ) {
+            if ( cnt <= 0 ) {
+                /* Stop reading with error or EOF. */
                 return NULL;
             }
             pos += cnt;
