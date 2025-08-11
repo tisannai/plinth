@@ -1484,12 +1484,8 @@ plcm_t plss_read_file_with_pad( plcm_t plcm, const char* filename, pl_size_t lef
             }
             str = plcm->data;
             cnt = read( fd, &str[ pos ], pagesize );
-            if ( cnt <= 0 ) {
-                /* Stop reading with error or EOF. */
-                return NULL;
-            }
-            pos += cnt;
-            if ( cnt < pagesize ) {
+            if ( cnt == 0 ) {
+                /* Stop reading with EOF. */
                 if ( left > 0 ) {
                     memset( &str[ plcm_used( plcm ) ], 0, left );
                 }
@@ -1500,7 +1496,11 @@ plcm_t plss_read_file_with_pad( plcm_t plcm, const char* filename, pl_size_t lef
                 memset( &str[ plcm_used( plcm ) + pos ], 0, right + 1 );
                 plcm->used += pos;
                 break;
+            } else if ( cnt < 0 ) {
+                /* Stop reading with error and exit with NULL. */
+                return NULL;
             }
+            pos += cnt;
         }
         // GCOV_EXCL_STOP
     }
