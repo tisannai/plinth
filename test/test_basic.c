@@ -689,6 +689,9 @@ void test_plcm( void )
     plss_compact( &plcm );
     TEST_ASSERT_EQUAL( strlen( s1 ), plcm_used( &plcm ) );
     TEST_ASSERT_EQUAL( strlen( s1 ) + 1, plcm_size( &plcm ) );
+    shadow = plcm_copy( &plcm );
+    TEST_ASSERT_TRUE( !strcmp( s1, plss_string( &shadow ) ) );
+    plcm_del( &shadow );
     s3 = "newstr";
     strcpy( (char*)plss_string( &plcm ), s3 );
     plss_refresh( &plcm );

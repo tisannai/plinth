@@ -833,6 +833,16 @@ plcm_s plcm_shadow( plcm_t plcm )
 }
 
 
+plcm_s plcm_copy( plcm_t plcm )
+{
+    plcm_s copy;
+    plcm_new( &copy, plcm_size( plcm ) );
+    plcm_get_ref( &copy, plcm_used( plcm ) );
+    memcpy( copy.data, plcm->data, plcm_size( plcm ) );
+    return copy;
+}
+
+
 plcm_t plcm_del( plcm_t plcm )
 {
     if ( ( plcm->type == PL_AA_HEAP ) && !plcm_is_empty( plcm ) ) {
@@ -1521,8 +1531,10 @@ plcm_t plss_write_file( plcm_t plcm, const char* filename )
         write( fd, plss_string( plcm ), plss_length( plcm ) );
         close( fd );
     } else {
+        // GCOV_EXCL_START
         fd = STDOUT_FILENO;
         write( fd, plss_string( plcm ), plss_length( plcm ) );
+        // GCOV_EXCL_STOP
     }
 
     return plcm;
@@ -1688,4 +1700,14 @@ plsr_s plsr_next_line( plsr_s plsr, pl_size_p offset )
     *offset = index;
 
     return ret;
+}
+
+
+char plsr_index( plsr_s plsr, pl_pos_t index )
+{
+    if ( index <= plsr.length ) {
+        return plsr.string[ index ];
+    } else {
+        return 0;
+    }
 }

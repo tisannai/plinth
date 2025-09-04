@@ -326,6 +326,8 @@ pl_struct( plsr )
 #define plcm_terminate_for_type( plcm, type ) plcm_terminate( ( plcm ), sizeof( type ) )
 #define plcm_used_for_type( plcm, type ) ( plcm_used( ( plcm ) ) / sizeof( type ) )
 
+#define plcm_null {0,0,NULL,PL_AA_SELF}
+
 /** \endcond */
 
 /**
@@ -1023,6 +1025,16 @@ plcm_t plcm_empty_ptr( plcm_t plcm, pl_size_t size );
  * @return Shadow, referencing the host.
  */
 plcm_s plcm_shadow( plcm_t plcm );
+
+
+/**
+ * Copy Plcm content and dimensions.
+ *
+ * @param plcm Plcm handle.
+ *
+ * @return Copy.
+ */
+plcm_s plcm_copy( plcm_t plcm );
 
 
 /**
@@ -1791,6 +1803,18 @@ pl_bool_t plsr_is_empty( plsr_s plsr );
  */
 plsr_s plsr_next_line( plsr_s plsr, pl_size_p offset );
 
+
+/**
+ * @brief Return indeced char.
+ *
+ * Note: return 0, if index is out-of-range.
+ *
+ * @param   plsr   Plsr handle.
+ * @param   index  Char index.
+ *
+ * @return  Indexed char.
+ */
+char plsr_index( plsr_s plsr, pl_pos_t index );
 
 
 #endif
