@@ -917,6 +917,8 @@ line5\n\
         TEST_ASSERT_EQUAL(
             pl_true,
             plsr_compare( line, plsr_from_string_and_length( &filetext[ prev_offset ], 5 ) ) );
+        TEST_ASSERT_EQUAL( 'n', plsr_index( line, 2 ) );
+        TEST_ASSERT_EQUAL( 0, plsr_index( line, 8 ) );
     }
     line = plsr_next_line( text, &offset );
     TEST_ASSERT_EQUAL( pl_true, plsr_is_null( line ) );

@@ -1027,6 +1027,9 @@ plcm_t plcm_empty_ptr( plcm_t plcm, pl_size_t size );
 plcm_s plcm_shadow( plcm_t plcm );
 
 
+pl_none plcm_copy_to( plcm_t plcm, plcm_t target, pl_t mem, pl_size_t size );
+
+
 /**
  * Copy Plcm content and dimensions.
  *

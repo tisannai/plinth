@@ -833,12 +833,19 @@ plcm_s plcm_shadow( plcm_t plcm )
 }
 
 
+pl_none plcm_copy_to( plcm_t plcm, plcm_t target, pl_t mem, pl_size_t size )
+{
+    plcm_use( target, mem, size );
+    plcm_get_ref( target, plcm_used( plcm ) );
+    memcpy( target->data, plcm->data, plcm_size( plcm ) );
+}
+
+
 plcm_s plcm_copy( plcm_t plcm )
 {
     plcm_s copy;
     plcm_new( &copy, plcm_size( plcm ) );
-    plcm_get_ref( &copy, plcm_used( plcm ) );
-    memcpy( copy.data, plcm->data, plcm_size( plcm ) );
+    plcm_copy_to( plcm, &copy, copy.data, plcm_size( &copy ) );
     return copy;
 }
 
