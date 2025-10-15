@@ -326,7 +326,7 @@ pl_struct( plsr )
 #define plcm_terminate_for_type( plcm, type ) plcm_terminate( ( plcm ), sizeof( type ) )
 #define plcm_used_for_type( plcm, type ) ( plcm_used( ( plcm ) ) / sizeof( type ) )
 
-#define plcm_null {0,0,NULL,PL_AA_SELF}
+#define plcm_null (plcm_s){0,0,NULL,PL_AA_SELF}
 
 /** \endcond */
 
