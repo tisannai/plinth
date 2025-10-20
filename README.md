@@ -48,9 +48,10 @@ type allocator. `plam` consists of one or more Nodes, which are
 chained together as a doubly linked list. Each allocation from `plam`
 is a continuous chunk of memory from a Node. When the memory from one
 Node is exhausted, a new Node is allocated and added to the chain.
-Memory can be deallocated back to `plam`, but only in the order it was
-reserved, and each deallocation must be annotated with its size.
-`plam` does not keep track of the detailed allocation history.
+Memory can be deallocated back to `plam`, but only in the reverse
+order it was reserved, and each deallocation must be annotated with
+its size. `plam` does not keep track of the detailed allocation
+history.
 
 ```
            plam_node_s

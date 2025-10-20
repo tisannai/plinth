@@ -598,6 +598,12 @@ pl_none plbm_new( plbm_t plbm, pl_size_t nsize, pl_size_t bsize )
 }
 
 
+pl_none plbm_new_with_count( plbm_t plbm, pl_size_t bcount, pl_size_t bsize )
+{
+    plbm_new( plbm, sizeof( pl_node_s ) + bcount * bsize, bsize );
+}
+
+
 pl_none plbm_use( plbm_t plbm, pl_t node, pl_size_t nsize, pl_size_t bsize )
 {
     if ( plbm__is_valid( nsize, bsize ) ) {
@@ -922,8 +928,14 @@ pl_none plcm_resize( plcm_t plcm, pl_size_t size )
             }
 
             plcm->data = pl_realloc_memory( plcm->data, new_size );
-            memset( plcm->data + plcm->size, 0, ( new_size - plcm->size ) );
-            plcm->size = new_size;
+            if ( plcm->data ) {
+                memset( plcm->data + plcm->size, 0, ( new_size - plcm->size ) );
+                plcm->size = new_size;
+            } else {
+                // GCOV_EXCL_START
+                plcm__init( plcm );
+                // GCOV_EXCL_STOP
+            }
         }
     }
 }
@@ -1010,6 +1022,21 @@ pl_none plcm_set( plcm_t plcm, pl_pos_t pos, const pl_t data, pl_size_t size )
 pl_none plcm_set_ptr( plcm_t plcm, pl_pos_t pos, const pl_t ptr )
 {
     memcpy( plcm_ref( plcm, pos * sizeof( pl_t ) ), &ptr, sizeof( pl_t ) );
+}
+
+
+pl_t plcm_pop( plcm_t plcm, pl_size_t size )
+{
+    plcm->used -= size;
+    return plcm_end( plcm );
+}
+
+
+pl_t plcm_pop_ptr( plcm_t plcm )
+{
+    pl_p pop;
+    pop = plcm_pop( plcm, sizeof( pl_t ) );
+    return *pop;
 }
 
 
@@ -1109,6 +1136,12 @@ pl_bool_t plcm_debt( plcm_t plcm )
 pl_t plcm_end( plcm_t plcm )
 {
     return plcm->data + plcm->used;
+}
+
+
+pl_t plcm_tail( plcm_t plcm, pl_size_t size )
+{
+    return plcm->data + plcm->used - size;
 }
 
 

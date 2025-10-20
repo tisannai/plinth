@@ -332,7 +332,7 @@ void test_plbm( void )
     s1 = "testing...";
     s2 = "testing again...";
 
-    plbm_new( &plbm, sizeof( pl_node_s ) + 2 * 8, 8 );
+    plbm_new_with_count( &plbm, 2, 8 );
     m1 = plbm_get( &plbm );
     TEST_ASSERT( m1 != NULL );
     TEST_ASSERT_EQUAL( pl_true, plbm_is_continuous( &plbm ) );
@@ -551,6 +551,7 @@ void test_plcm( void )
     TEST_ASSERT_EQUAL( 12, plcm_size( &plcm ) );
     TEST_ASSERT( strcmp( s1, plcm_data( &plcm ) ) == 0 );
     TEST_ASSERT_EQUAL( plcm_data( &plcm ) + plcm_used( &plcm ), plcm_end( &plcm ) );
+    TEST_ASSERT_EQUAL( plcm_data( &plcm ) + plcm_used( &plcm ) - 8, plcm_tail( &plcm, 8 ) );
     plcm_del( &plcm );
     TEST_ASSERT_EQUAL( 1, plcm_is_empty( &plcm ) );
     plam_del( &plam );
@@ -618,6 +619,10 @@ void test_plcm( void )
 
     s2 = "again";
     plcm_empty_ptr( &plcm, 4 );
+
+    plcm_store_ptr( &plcm, s1 );
+    s3 = plcm_pop_ptr( &plcm );
+    TEST_ASSERT( strcmp( s1, s3 ) == 0 );
 
     plcm_store_ptr( &plcm, s1 );
     plcm_store_ptr( &plcm, s2 );

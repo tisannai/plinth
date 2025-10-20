@@ -312,6 +312,7 @@ pl_struct( plsr )
 /** \cond */
 
 #define pl_alloc_memory_for_type( type ) pl_alloc_memory( sizeof( type ) )
+#define pl_alloc_memory_for_type_n( type, n ) pl_alloc_memory( (n) * sizeof( type ) )
 
 #define plam_get_for_type( plam, type ) plam_get( ( plam ), sizeof( type ) )
 #define plam_put_for_type( plam, type ) plam_put( ( plam ), sizeof( type ) )
@@ -326,7 +327,14 @@ pl_struct( plsr )
 #define plcm_terminate_for_type( plcm, type ) plcm_terminate( ( plcm ), sizeof( type ) )
 #define plcm_used_for_type( plcm, type ) ( plcm_used( ( plcm ) ) / sizeof( type ) )
 
-#define plcm_null (plcm_s){0,0,NULL,PL_AA_SELF}
+#define PLAM_NULL_INIT {NULL,0,PL_AA_SELF,NULL}
+#define PLAM_NULL (plam_s)PLAM_NULL_INIT
+
+#define PLBM_NULL_INIT {NULL,NULL,0,0,0,PL_AA_SELF,NULL}
+#define PLBM_NULL (plbm_s)PLBM_NULL_INIT
+
+#define PLCM_NULL_INIT {0,0,NULL,PL_AA_SELF}
+#define PLCM_NULL (plcm_s)PLCM_NULL_INIT
 
 /** \endcond */
 
@@ -700,6 +708,18 @@ pl_bool_t plam_is_empty( plam_t plam );
  * @return None.
  */
 pl_none plbm_new( plbm_t plbm, pl_size_t nsize, pl_size_t bsize );
+
+
+/**
+ * @brief Create plbm in heap with block count.
+ *
+ * @param    plbm   Plbm handle.
+ * @param    bcount Node size.
+ * @param    bsize  Block size.
+ *
+ * @return None.
+ */
+pl_none plbm_new_with_count( plbm_t plbm, pl_size_t bcount, pl_size_t bsize );
 
 
 /**
@@ -1193,6 +1213,27 @@ pl_none plcm_set_ptr( plcm_t plcm, pl_pos_t pos, const pl_t ptr );
 
 
 /**
+ * @brief Pop value from the end.
+ *
+ * @param    plcm   Plcm handle.
+ * @param    size   Value size.
+ *
+ * @return Popped value.
+ */
+pl_t plcm_pop( plcm_t plcm, pl_size_t size );
+
+
+/**
+ * @brief Pop pointer value from the end.
+ *
+ * @param    plcm   Plcm handle.
+ *
+ * @return Popped value.
+ */
+pl_t plcm_pop_ptr( plcm_t plcm );
+
+
+/**
  * @brief Remove data.
  *
  * @param    plcm   Plcm handle.
@@ -1351,6 +1392,18 @@ pl_bool_t plcm_debt( plcm_t plcm );
  * @return Reference to end.
  */
 pl_t plcm_end( plcm_t plcm );
+
+
+/**
+ * @brief Reference to tail data.
+ *
+ * Pointer to data is returned, not the data.
+ *
+ * @param    plcm   Plcm handle.
+ *
+ * @return Reference to tail.
+ */
+pl_t plcm_tail( plcm_t plcm, pl_size_t size );
 
 
 /**
