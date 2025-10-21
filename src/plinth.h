@@ -312,7 +312,7 @@ pl_struct( plsr )
 /** \cond */
 
 #define pl_alloc_memory_for_type( type ) pl_alloc_memory( sizeof( type ) )
-#define pl_alloc_memory_for_type_n( type, n ) pl_alloc_memory( (n) * sizeof( type ) )
+#define pl_alloc_memory_for_type_n( type, n ) pl_alloc_memory( ( n ) * sizeof( type ) )
 
 #define plam_get_for_type( plam, type ) plam_get( ( plam ), sizeof( type ) )
 #define plam_put_for_type( plam, type ) plam_put( ( plam ), sizeof( type ) )
@@ -327,14 +327,14 @@ pl_struct( plsr )
 #define plcm_terminate_for_type( plcm, type ) plcm_terminate( ( plcm ), sizeof( type ) )
 #define plcm_used_for_type( plcm, type ) ( plcm_used( ( plcm ) ) / sizeof( type ) )
 
-#define PLAM_NULL_INIT {NULL,0,PL_AA_SELF,NULL}
-#define PLAM_NULL (plam_s)PLAM_NULL_INIT
+#define PLAM_NULL_INIT { NULL, 0, PL_AA_SELF, NULL }
+#define PLAM_NULL ( plam_s ) PLAM_NULL_INIT
 
-#define PLBM_NULL_INIT {NULL,NULL,0,0,0,PL_AA_SELF,NULL}
-#define PLBM_NULL (plbm_s)PLBM_NULL_INIT
+#define PLBM_NULL_INIT { NULL, NULL, 0, 0, 0, PL_AA_SELF, NULL }
+#define PLBM_NULL ( plbm_s ) PLBM_NULL_INIT
 
-#define PLCM_NULL_INIT {0,0,NULL,PL_AA_SELF}
-#define PLCM_NULL (plcm_s)PLCM_NULL_INIT
+#define PLCM_NULL_INIT { 0, 0, NULL, PL_AA_SELF }
+#define PLCM_NULL ( plcm_s ) PLCM_NULL_INIT
 
 /** \endcond */
 

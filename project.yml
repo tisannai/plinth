@@ -1,0 +1,106 @@
+---
+:project:
+  :name: plinth
+  :which_ceedling: gem
+  :build_root: build
+  :test_file_prefix: test_
+  :default_tasks:
+    - test:all
+  :release_build: FALSE
+
+:release_build:
+  :output: libplinth.so.0.0.1
+  :use_assembly: FALSE
+  :artifacts: []
+
+:plugins:
+  :load_paths: []
+  :enabled:
+    - gcov
+    - report_tests_pretty_stdout
+
+:paths:
+  :test:
+    - +:test/**
+    - -:test/support
+  :source:
+    - src/**
+  :include:
+    - src/**
+  :support:
+    - test/support
+  :libraries: []
+
+:files:
+  :source:
+    - +:src/plinth.c
+
+
+:defines:
+  :test:
+    - TEST
+  :release: []
+  :use_test_definition: FALSE
+
+:flags:
+  :test:
+    :compile:
+      :*:
+        - -Wstrict-prototypes
+        - -Werror
+        - -fdata-sections
+        - -ffunction-sections
+        - -Wall
+        - -fPIC
+        - -g
+
+    :link:
+      :*:
+        - -flto
+        - -Wl,--gc-sections
+
+:gcov:
+  :summaries: TRUE
+  :report_task: FALSE
+  :utilities:
+    - gcovr
+  :reports:
+     - HtmlDetailed
+  :gcovr:
+    :html_medium_threshold: 75
+    :html_high_threshold: 90
+
+:tools:
+  :test_linker:
+    :executable: gcc
+    :arguments:
+      - ${1}
+      - -lm
+      - -o ${2}
+  :gcov_linker:
+    :executable: gcc
+    :arguments:
+      - -fprofile-arcs
+      - -ftest-coverage
+      - ${1}
+      - -lm
+      - -o ${2}
+  :release_compiler:
+    :executable: gcc
+    :arguments:
+      - -DNDEBUG
+      - ${1}
+      - -Wall
+      - -g
+      - -fPIC
+      - -c
+      - -o ${2}
+  :release_linker:
+    :executable: gcc
+    :arguments:
+      - -shared
+      - -Wl,-soname,libplinth.so.0
+      - ${1}
+      - -o ${2}
+...
+
