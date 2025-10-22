@@ -59,6 +59,7 @@
         - -flto
         - -Wl,--gc-sections
 
+
 :gcov:
   :summaries: TRUE
   :report_task: FALSE

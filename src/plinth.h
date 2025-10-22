@@ -311,6 +311,9 @@ pl_struct( plsr )
 
 /** \cond */
 
+/* Use for libraries based on plinth. */
+#define _plcm_is_empty( p ) ( ( p )->data == NULL )
+
 #define pl_alloc_memory_for_type( type ) pl_alloc_memory( sizeof( type ) )
 #define pl_alloc_memory_for_type_n( type, n ) pl_alloc_memory( ( n ) * sizeof( type ) )
 

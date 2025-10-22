@@ -16,7 +16,6 @@
 #include "plinth.h"
 
 
-
 static pl_none pl_node__init( pl_node_t node )
 {
     if ( node ) {
@@ -858,7 +857,7 @@ plcm_s plcm_copy( plcm_t plcm )
 
 plcm_t plcm_del( plcm_t plcm )
 {
-    if ( ( plcm->type == PL_AA_HEAP ) && !plcm_is_empty( plcm ) ) {
+    if ( ( plcm->type == PL_AA_HEAP ) && !_plcm_is_empty( plcm ) ) {
         pl_free_memory( plcm->data );
     }
     plcm__init( plcm );
@@ -868,11 +867,11 @@ plcm_t plcm_del( plcm_t plcm )
 
 pl_none plcm_resize( plcm_t plcm, pl_size_t size )
 {
-    if ( size > plcm->size || plcm_is_empty( plcm ) ) {
+    if ( _plcm_is_empty( plcm ) || size > plcm->size ) {
 
         pl_size_t new_size;
 
-        if ( plcm_is_empty( plcm ) ) {
+        if ( _plcm_is_empty( plcm ) ) {
 
             /* Empty plcm. */
             if ( plcm->size == 0 || size > plcm->size ) {
@@ -1147,7 +1146,7 @@ pl_t plcm_tail( plcm_t plcm, pl_size_t size )
 
 pl_bool_t plcm_is_empty( plcm_t plcm )
 {
-    return ( plcm->data == NULL );
+    return _plcm_is_empty( plcm );
 }
 
 
@@ -1497,7 +1496,7 @@ plcm_t plss_read_file_with_pad( plcm_t plcm, const char* filename, pl_size_t lef
 
         plcm_resize( plcm, plcm_used( plcm ) + size + left + right + 1 );
 
-        if ( plcm_is_empty( plcm ) ) {
+        if ( _plcm_is_empty( plcm ) ) {
             return NULL; // GCOV_EXCL_LINE
         }
 
