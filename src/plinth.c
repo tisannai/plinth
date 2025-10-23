@@ -341,6 +341,7 @@ pl_none plam_new( plam_t plam, pl_size_t size )
 
         if ( plam->node == NULL ) {
             plam->size = 0; // GCOV_EXCL_LINE
+            plam->type = PL_AA_NONE; // GCOV_EXCL_LINE
         }
 
     } else {
@@ -888,6 +889,7 @@ pl_none plcm_resize( plcm_t plcm, pl_size_t size )
             } else {
                 // GCOV_EXCL_START
                 plcm__init( plcm );
+                plcm->type = PL_AA_NONE;
                 // GCOV_EXCL_STOP
             }
 
@@ -910,6 +912,7 @@ pl_none plcm_resize( plcm_t plcm, pl_size_t size )
             } else {
                 // GCOV_EXCL_START
                 plcm__init( plcm );
+                plcm->type = PL_AA_NONE;
                 // GCOV_EXCL_STOP
             }
 
@@ -933,6 +936,7 @@ pl_none plcm_resize( plcm_t plcm, pl_size_t size )
             } else {
                 // GCOV_EXCL_START
                 plcm__init( plcm );
+                plcm->type = PL_AA_NONE;
                 // GCOV_EXCL_STOP
             }
         }
