@@ -31,6 +31,8 @@
 /** Function pointer type definition. */
 #define pl_fn_type( name, rettype, ... ) typedef rettype ( *name##_fn_t )( __VA_ARGS__ );
 
+
+
 /* ------------------------------------------------------------
  * Structure type definitions.
  */
@@ -57,20 +59,20 @@
  *         };
  * @endcode
  */
-#define pl_struct( name )                   \
-    typedef struct name##struct_s name##_s; \
-    typedef name##_s*             name##_t; \
-    typedef name##_s**            name##_p; \
-    struct name##struct_s
+#define pl_struct( name )                    \
+    typedef struct name##_struct_s name##_s; \
+    typedef name##_s*              name##_t; \
+    typedef name##_s**             name##_p; \
+    struct name##_struct_s
 
 /** Forward-declaration of struct and friends. */
-#define pl_struct_type( name )              \
-    typedef struct name##struct_s name##_s; \
-    typedef name##_s*             name##_t; \
-    typedef name##_s**            name##_p;
+#define pl_struct_type( name )               \
+    typedef struct name##_struct_s name##_s; \
+    typedef name##_s*              name##_t; \
+    typedef name##_s**             name##_p;
 
 /** Post-declaration of struct body. */
-#define pl_struct_body( name ) struct name##struct_s
+#define pl_struct_body( name ) struct name##_struct_s
 
 
 /**
@@ -227,7 +229,7 @@ pl_struct( plam )
     pl_node_t node; /**< Current node. */
     pl_size_t size; /**< Node size. */
     pl_aa_t   type; /**< Reservation type. */
-    pl_t      ator; /**< Allocator. */
+    pl_t      host; /**< Allocator host (if any). */
 };
 
 
@@ -249,7 +251,7 @@ pl_struct( plbm )
     pl_size_t bsize; /**< Block size. */
     pl_size_t itail; /**< Init tail count. */
     pl_aa_t   type;  /**< Reservation type. */
-    pl_t      ator;  /**< Allocator. */
+    pl_t      host;  /**< Allocator host (if any). */
 };
 
 
@@ -305,6 +307,7 @@ pl_struct( plsr )
 };
 
 
+
 /* ------------------------------------------------------------
  * Access macros with type abstraction.
  */
@@ -357,6 +360,7 @@ pl_struct( plsr )
           ( plcm_each_ptr_index < plcm_used_ptr( plcm ) ) &&          \
           ( iter = (cast)plcm_ref_ptr( plcm, plcm_each_ptr_index ) ); \
           plcm_each_ptr_index++ )
+
 
 
 /* ------------------------------------------------------------
@@ -611,6 +615,17 @@ pl_none plam_put( plam_t plam, pl_size_t size );
  * @return Pointer to stored data.
  */
 pl_t plam_store( plam_t plam, const pl_t data, pl_size_t size );
+
+
+/**
+ * @brief Get allocation from plam and store pointer value to it.
+ *
+ * @param    plam     Plam handle.
+ * @param    ptr      Pointer value.
+ *
+ * @return Pointer to stored data.
+ */
+pl_t plam_store_ptr( plam_t plam, pl_t ptr );
 
 
 /**
@@ -877,6 +892,18 @@ pl_none plbm_put( plbm_t plbm, pl_t block );
 
 
 /**
+ * @brief Get allocation from plbm and store the data.
+ *
+ * @param    plbm   Plbm handle.
+ * @param    data   Data to store.
+ * @param    size   Allocation size.
+ *
+ * @return Pointer to stored data.
+ */
+pl_t plbm_store( plbm_t plbm, const pl_t data, pl_size_t size );
+
+
+/**
  * @brief Allocate storage for pointer and store its value.
  *
  * @param    plbm   Plbm handle.
@@ -1050,6 +1077,16 @@ plcm_t plcm_empty_ptr( plcm_t plcm, pl_size_t size );
 plcm_s plcm_shadow( plcm_t plcm );
 
 
+/**
+ * Copy Plcm content to given target.
+ *
+ * @param plcm   Plcm handle to copy from.
+ * @param target Target plcm handle.
+ * @param mem    Memory for copy.
+ * @param size   Memory size for copy storage.
+ *
+ * @return Copy.
+ */
 pl_none plcm_copy_to( plcm_t plcm, plcm_t target, pl_t mem, pl_size_t size );
 
 
@@ -1398,11 +1435,12 @@ pl_t plcm_end( plcm_t plcm );
 
 
 /**
- * @brief Reference to tail data.
+ * @brief Reference of tail data.
  *
  * Pointer to data is returned, not the data.
  *
  * @param    plcm   Plcm handle.
+ * @param    size   Tail size.
  *
  * @return Reference to tail.
  */
@@ -1443,6 +1481,7 @@ pl_pos_t plcm_find_ptr( plcm_t plcm, pl_t ref );
 pl_pos_t plcm_find_with( plcm_t plcm, plcm_compare_fn_t compare, pl_size_t size, pl_t ref );
 
 
+
 /* ------------------------------------------------------------
  * Unified Memory Allocator:
  */
@@ -1480,6 +1519,29 @@ pl_t plum_get( plum_t plum, pl_size_t size );
  * @return Address or NULL if no memory was reclaimed.
  */
 pl_t plum_put( plum_t plum, pl_t mem, pl_size_t size );
+
+
+/**
+ * @brief Get allocation from plum and store the data.
+ *
+ * @param    plum   Plum handle.
+ * @param    data   Data to store.
+ * @param    size   Allocation size.
+ *
+ * @return Pointer to stored data, null for failure.
+ */
+pl_t plum_store( plum_t plum, const pl_t data, pl_size_t size );
+
+
+/**
+ * @brief Get allocation from plum and store pointer value to it.
+ *
+ * @param    plum     Plum handle.
+ * @param    ptr      Pointer value.
+ *
+ * @return Pointer to stored data, null for failure.
+ */
+pl_t plum_store_ptr( plum_t plum, pl_t ptr );
 
 
 /**

@@ -1,0 +1,11 @@
+PROJECT_NAME           = "Plinth - library"
+OUTPUT_DIRECTORY       = build/doc
+INPUT                  = README.md src
+USE_MDFILE_AS_MAINPAGE = README.md
+RECURSIVE              = NO
+OPTIMIZE_OUTPUT_FOR_C  = YES
+SOURCE_BROWSER         = YES
+ENABLE_PREPROCESSING   = YES
+MACRO_EXPANSION        = YES
+GENERATE_HTML          = YES
+GENERATE_LATEX         = NO

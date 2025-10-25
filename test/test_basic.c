@@ -204,6 +204,9 @@ void test_plam( void )
     TEST_ASSERT( strcmp( "hello testing...\n", s2 ) == 0 );
     s2 = plam_store_string( &plam, NULL );
     TEST_ASSERT_EQUAL( NULL, s2 );
+    m2 = plam_store_ptr( &plam, s1 );
+    s2 = *(char**)m2;
+    TEST_ASSERT( strcmp( s1, s2 ) == 0 );
     plam_del( &plam );
 
     plam_new( &plam, 2 );
@@ -743,6 +746,9 @@ void test_plum( void )
     plum_use( &plum, PL_AA_HEAP, NULL );
     TEST_ASSERT( plum_type( &plum ) == PL_AA_HEAP );
     TEST_ASSERT( plum_host( &plum ) == NULL );
+    m[ 0 ] = plum_store_ptr( &plum, s1 );
+    TEST_ASSERT( !strcmp( *((char**)m[0]), s1 ) );
+    plum_put( &plum, m[ 0 ], sizeof( pl_t) );
     m[ 0 ] = plum_get( &plum, 128 );
     TEST_ASSERT( m[ 0 ] != NULL );
     plum_put( &plum, m[ 0 ], 128 );
