@@ -230,7 +230,7 @@ allocator type and the allocator handle (NULL for BMA) as arguments.
 After creation, `plum` allocation functions are ready to be used.
 `plum_get()` gets allocation from the registered host depending on the
 host type. `plum_put()` is used for returning the allocation back.
-`plum_update()` is used to resize a current allocation.
+`plum_update()` is used to resize the current allocation.
 
 `plum` does not try to overcome all the limitations that the different
 hosts expose. BMA host has no surprises. For `plum_get()`, all hosts
@@ -239,8 +239,8 @@ allocation size is obviously the size of the `plbm` block.
 
 For `plam` host, `plum_put()` is able to fully utilize the returned
 memory if returns are performed in reverse order to the allocations.
-The same applies to `plcm`. For `plbm` host, the order of returns are
-not significant.
+The same applies to a `plcm`. For a `plbm` host, the order of returns
+have no limitations.
 
 With `plum_update()`, the data in the allocation is retained. If the
 new allocation starts from the same location as the current, no data
@@ -456,9 +456,10 @@ is universal in the sense, that it can be used in any context,
 technically. Universal Interface is useful in situations where we have
 to commit to a mechanism, but we don't have much use cases available.
 The interface is captured as struct called `pl_ui`, which includes two
-members: `fun` and `env`. `fun` is called by the interface master to
-communicate with the interface slave. The `env` is used as permanent
-context for communication. The `fun` method is declared as:
+members: `fun` and `env`. `pl_ui` is initialized with `pl_ui_init`.
+`fun` is called by the interface master to communicate with the
+interface slave. The `env` is used as permanent context for
+communication. The `fun` method is declared as:
 
     typedef pl_none ( *pl_ui_f )( pl_t env, pl_t argi, pl_t argo );
 
@@ -471,8 +472,9 @@ performing:
 from the master side. While the interface is universal, the
 communicating parties are, obviously, required to agree on the
 communication content details in advance. The opaque datastructure
-referenced by `argi`, contains typically an ID field as first struct
-field, which can be used to identify the type of content provided.
+referenced by `argi`, contains typically an ID field as the first
+struct field (follow by actual payload). The ID field can be used to
+identify the type of provided content.
 
 
 ## Plinth API documentation
@@ -512,8 +514,8 @@ Ceedling documentation for details.
 
 ## Ceedling
 
-Plinth uses Ceedling for building and testing. Standard Ceedling files
-are not in GIT. These can be added by executing:
+Standard Ceedling files are not in GIT. These can be added by
+executing:
 
     shell> ceedling new plinth
 

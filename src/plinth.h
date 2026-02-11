@@ -17,15 +17,17 @@
 #include <stdarg.h>
 
 
-
 /* ------------------------------------------------------------
  * Simple type definition features.
  */
 
 /** Re-define type and related pointers. */
-#define pl_type( base, type )   \
-    typedef base      type##_t; \
-    typedef type##_t* type##_p;
+#define pl_type( base, type )             \
+    typedef base      type##_t;           \
+    typedef type##_t* type##_p;           \
+    typedef type##_t* restrict type##_pu; \
+    typedef type##_p* type##_pp;          \
+    typedef type##_p* restrict type##_ppu;
 
 
 /** Function pointer type definition. */
@@ -40,6 +42,9 @@
 /**
  * Define struct and related typedefs for struct type ("_s"), pointer
  * type ("_t"), and reference type ("_p").
+ *
+ * For user guaranteed unaliasing, there is also the corresponding
+ * type versions using the "restrict" keyword ("_tu", "_pu").
  *
  * Example:
  * @code
@@ -59,17 +64,22 @@
  *         };
  * @endcode
  */
-#define pl_struct( name )                    \
-    typedef struct name##_struct_s name##_s; \
-    typedef name##_s*              name##_t; \
-    typedef name##_s**             name##_p; \
+#define pl_struct( name )                           \
+    typedef struct name##_struct_s name##_s;        \
+    typedef name##_s*              name##_t;        \
+    typedef name##_s* restrict name##_tu;           \
+    typedef name##_s** name##_p;                    \
+    typedef name##_s* restrict* restrict name##_pu; \
     struct name##_struct_s
+
 
 /** Forward-declaration of struct and friends. */
 #define pl_struct_type( name )               \
     typedef struct name##_struct_s name##_s; \
     typedef name##_s*              name##_t; \
-    typedef name##_s**             name##_p;
+    typedef name##_s* restrict name##_tu;    \
+    typedef name##_s** name##_p;             \
+    typedef name##_s* restrict* restrict name##_pu;
 
 /** Post-declaration of struct body. */
 #define pl_struct_body( name ) struct name##_struct_s
@@ -115,9 +125,11 @@ typedef void pl_none;
 
 /** Generic pointer type. */
 typedef void* pl_t;
+typedef void* restrict pl_tu;
 
 /** Generic pointer type reference. */
 typedef void** pl_p;
+typedef void* restrict* restrict pl_pu;
 
 
 pl_type( int8_t, pl_i8 );    /**< Character type. */
@@ -464,7 +476,7 @@ pl_none plam_new( plam_t plam, pl_size_t size );
 
 
 /**
- * @brief Initiate plam to node (no debt).
+ * @brief Initiate plam to node (no debt for first node).
  *
  * @param    plam   Plam handle.
  * @param    node   Node.
@@ -476,7 +488,7 @@ pl_none plam_use( plam_t plam, pl_t node, pl_size_t size );
 
 
 /**
- * @brief Initiate nested plam from plam (no debt).
+ * @brief Initiate nested plam from plam (no debt for first node).
  *
  * @param    plam   Nested plam handle.
  * @param    host   Plam handle.
@@ -488,7 +500,7 @@ pl_none plam_use_plam( plam_t plam, plam_t host, pl_size_t size );
 
 
 /**
- * @brief Initiate nested plam from plbm (no debt).
+ * @brief Initiate nested plam from plbm (no debt for first node).
  *
  * @param    plam   Nested plam handle.
  * @param    host   Plbm handle.
@@ -499,7 +511,7 @@ pl_none plam_use_plbm( plam_t plam, plbm_t host );
 
 
 /**
- * @brief Deploy plam inside plam (debt).
+ * @brief Deploy plam inside plam (no debt for nested).
  *
  * @param    plam   Nested plam handle.
  * @param    host   Plam handle.
@@ -511,7 +523,7 @@ pl_none plam_into_plam( plam_t plam, plam_t host, pl_size_t size );
 
 
 /**
- * @brief Deploy plam inside plbm (debt).
+ * @brief Deploy plam inside plbm (no debt for nested).
  *
  * @param    plam   Nested plam handle.
  * @param    host   Plbm handle.
@@ -741,7 +753,7 @@ pl_none plbm_new_with_count( plbm_t plbm, pl_size_t bcount, pl_size_t bsize );
 
 
 /**
- * @brief Initiate plbm to node (no debt).
+ * @brief Initiate plbm to node (no debt for first node).
  *
  * @param    plbm   Plbm handle.
  * @param    node   Node.
@@ -754,7 +766,7 @@ pl_none plbm_use( plbm_t plbm, pl_t node, pl_size_t nsize, pl_size_t bsize );
 
 
 /**
- * @brief Initiate nested plbm from plam (no debt).
+ * @brief Initiate nested plbm from plam (no debt for first node).
  *
  * @param    plbm   Nested plbm handle.
  * @param    host   Plam handle.
@@ -767,7 +779,7 @@ pl_none plbm_use_plam( plbm_t plbm, plam_t host, pl_size_t nsize, pl_size_t bsiz
 
 
 /**
- * @brief Initiate nested plbm from plbm (no debt).
+ * @brief Initiate nested plbm from plbm (no debt for first node).
  *
  * Node size is inherited from host block size.
  *
@@ -781,7 +793,7 @@ pl_none plbm_use_plbm( plbm_t plbm, plbm_t host, pl_size_t bsize );
 
 
 /**
- * @brief Deploy plbm inside plam (debt).
+ * @brief Deploy plbm inside plam (no debt for nested).
  *
  * @param    plbm   Nested plbm handle.
  * @param    host   Plam handle.
@@ -794,7 +806,7 @@ pl_none plbm_into_plam( plbm_t plbm, plam_t host, pl_size_t nsize, pl_size_t bsi
 
 
 /**
- * @brief Deploy plbm inside plbm (debt).
+ * @brief Deploy plbm inside plbm (no debt for nested).
  *
  * Node size is inherited from host block size.
  *
