@@ -1054,7 +1054,7 @@ pl_none plcm_set_ptr( plcm_t plcm, pl_pos_t pos, const pl_t ptr )
 }
 
 
-pl_t plcm_reserve( plcm_t plcm, pl_size_t size )
+pl_t plcm_consume( plcm_t plcm, pl_size_t size )
 {
     pl_t ret;
     ret = plcm_end( plcm );

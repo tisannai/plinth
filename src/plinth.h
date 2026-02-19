@@ -1289,9 +1289,9 @@ pl_none plcm_set_ptr( plcm_t plcm, pl_pos_t pos, const pl_t ptr );
 /**
  * @brief Consume allocation for value (in the allocation end position).
  *
- * Use plcm_reserve with plcm_ensure. First ensure allocation (with
+ * Use plcm_consume with plcm_ensure. First ensure allocation (with
  * plcm_ensure), then store value(s), and finally report to Plcm the
- * consumed memory by stored value(s), with plcm_reserve.
+ * consumed memory, with plcm_consume.
  *
  * NOTE: Reserve does not perform plcm_resize implicitly. User must
  * ensure that pre-allocation size is sufficient.
@@ -1299,9 +1299,9 @@ pl_none plcm_set_ptr( plcm_t plcm, pl_pos_t pos, const pl_t ptr );
  * @param    plcm   Plcm handle.
  * @param    size   Value size.
  *
- * @return Location start address for future value.
+ * @return Start address for value.
  */
-pl_t plcm_reserve( plcm_t plcm, pl_size_t size );
+pl_t plcm_consume( plcm_t plcm, pl_size_t size );
 
 
 /**
