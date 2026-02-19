@@ -956,6 +956,21 @@ pl_none plcm_resize( plcm_t plcm, pl_size_t size )
 }
 
 
+pl_none plcm_increase( plcm_t plcm, pl_size_t size )
+{
+    plcm_resize( plcm, plcm->size + size );
+}
+
+
+pl_t plcm_ensure( plcm_t plcm, pl_size_t size )
+{
+    pl_t ret;
+    ret = plcm_end( plcm );
+    plcm_resize( plcm, plcm->used + size );
+    return ret;
+}
+
+
 pl_none plcm_compact( plcm_t plcm )
 {
     if ( ( plcm->type == PL_AA_HEAP ) ) {
@@ -963,7 +978,6 @@ pl_none plcm_compact( plcm_t plcm )
         plcm->size = plcm->used;
     }
 }
-
 
 
 pl_pos_t plcm_get_pos( plcm_t plcm, pl_size_t size )
@@ -1037,6 +1051,15 @@ pl_none plcm_set( plcm_t plcm, pl_pos_t pos, const pl_t data, pl_size_t size )
 pl_none plcm_set_ptr( plcm_t plcm, pl_pos_t pos, const pl_t ptr )
 {
     memcpy( plcm_ref( plcm, pos * sizeof( pl_t ) ), &ptr, sizeof( pl_t ) );
+}
+
+
+pl_t plcm_reserve( plcm_t plcm, pl_size_t size )
+{
+    pl_t ret;
+    ret = plcm_end( plcm );
+    plcm->used += size;
+    return ret;
 }
 
 

@@ -724,6 +724,18 @@ void test_plcm( void )
     pos = plcm_find_with( &plcm, plcm_find_compare, sizeof( char* ), s3 );
     TEST_ASSERT_EQUAL( -1, pos );
     plcm_del( &plcm );
+
+
+    /* Test increase, ensure and reserve. */
+    plcm_new( &plcm, 4 );
+    s1 = "testing...";
+    plcm_increase( &plcm, 12 );
+    TEST_ASSERT_EQUAL( 16, plcm_size( &plcm ) );
+    s2 = plcm_ensure( &plcm, strlen( s1 )+1 );
+    memcpy( s2, s1, strlen( s1 ) + 1 );
+    plcm_reserve( &plcm, strlen( s1 ) );
+    TEST_ASSERT_TRUE( !strcmp( s1, plss_string( &plcm ) ) );
+    plcm_del( &plcm );
 }
 
 

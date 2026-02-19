@@ -1137,6 +1137,28 @@ pl_none plcm_resize( plcm_t plcm, pl_size_t size );
 
 
 /**
+ * @brief Resize plcm allocation by increase.
+ *
+ * @param    plcm   Plcm handle.
+ * @param    size   Allocation size increase.
+ *
+ * @return None.
+ */
+pl_none plcm_increase( plcm_t plcm, pl_size_t size );
+
+
+/**
+ * @brief Ensure that (future) value fits.
+ *
+ * @param    plcm   Plcm handle.
+ * @param    size   Value (increment) size.
+ *
+ * @return Location for value storage.
+ */
+pl_t plcm_ensure( plcm_t plcm, pl_size_t size );
+
+
+/**
  * @brief Compact plcm allocation to minimum size.
  *
  * @param    plcm   Plcm handle.
@@ -1262,6 +1284,24 @@ pl_none plcm_set( plcm_t plcm, pl_pos_t pos, const pl_t data, pl_size_t size );
  * @return None.
  */
 pl_none plcm_set_ptr( plcm_t plcm, pl_pos_t pos, const pl_t ptr );
+
+
+/**
+ * @brief Consume allocation for value (in the allocation end position).
+ *
+ * Use plcm_reserve with plcm_ensure. First ensure allocation (with
+ * plcm_ensure), then store value(s), and finally report to Plcm the
+ * consumed memory by stored value(s), with plcm_reserve.
+ *
+ * NOTE: Reserve does not perform plcm_resize implicitly. User must
+ * ensure that pre-allocation size is sufficient.
+ *
+ * @param    plcm   Plcm handle.
+ * @param    size   Value size.
+ *
+ * @return Location start address for future value.
+ */
+pl_t plcm_reserve( plcm_t plcm, pl_size_t size );
 
 
 /**

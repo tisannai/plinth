@@ -492,10 +492,10 @@ directory for testcases.
 
 ## Building and installing
 
-Plinth is built with the `do-build` script.
+Plinth is built with the `sbin/do-build` script.
 
-Install is performed with `do-install`. Please, edit the script for
-setting the installation root directory.
+Install is performed with `sbin/do-install`. Please, edit the script
+for setting the installation root directory.
 
 
 ## Testing
