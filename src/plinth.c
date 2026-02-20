@@ -964,10 +964,8 @@ pl_none plcm_increase( plcm_t plcm, pl_size_t size )
 
 pl_t plcm_ensure( plcm_t plcm, pl_size_t size )
 {
-    pl_t ret;
-    ret = plcm_end( plcm );
     plcm_resize( plcm, plcm->used + size );
-    return ret;
+    return plcm_end( plcm );
 }
 
 
