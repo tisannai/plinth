@@ -109,6 +109,7 @@
  */
 #define pl_enum( name )             \
     typedef enum name##_e name##_t; \
+    typedef name##_t* name##_p; \
     enum name##_e
 
 
