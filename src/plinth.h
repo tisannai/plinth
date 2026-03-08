@@ -278,9 +278,9 @@ pl_struct( plbm )
  */
 pl_struct( plcm )
 {
-    pl_size_t size; /**< Reservation size for data. */
-    pl_size_t used; /**< Used count for data. */
     pl_t      data; /**< Pointer to data. */
+    pl_size_t used; /**< Used count for data. */
+    pl_size_t size; /**< Reservation size for data. */
     pl_aa_t   type; /**< Reservation type. */
 };
 
@@ -315,8 +315,8 @@ pl_struct( plum )
  */
 pl_struct( plsr )
 {
-    pl_size_t   length; /**< String length. */
     const char* string; /**< String content. */
+    pl_size_t   length; /**< String length. */
 };
 
 
@@ -352,8 +352,11 @@ pl_struct( plsr )
 #define PLBM_NULL_INIT { NULL, NULL, 0, 0, 0, PL_AA_SELF, NULL }
 #define PLBM_NULL ( plbm_s ) PLBM_NULL_INIT
 
-#define PLCM_NULL_INIT { 0, 0, NULL, PL_AA_SELF }
+#define PLCM_NULL_INIT { NULL, 0, 0, PL_AA_SELF }
 #define PLCM_NULL ( plcm_s ) PLCM_NULL_INIT
+
+#define PLSR_NULL_INIT { NULL, 0 }
+#define PLSR_NULL ( plsr_s ) PLSR_NULL_INIT
 
 /** \endcond */
 
