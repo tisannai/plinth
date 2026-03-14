@@ -477,6 +477,144 @@ struct field (follow by actual payload). The ID field can be used to
 identify the type of provided content.
 
 
+Function listing:
+
+* `pl_ui_init` : Initialize ui structure.
+* `pl_ui_do` : Use Universal Interface.
+* `pl_alloc_memory` : Allocate memory from heap (zeroed).
+* `pl_alloc_only` : Allocate memory from heap (non-zeroed).
+* `pl_free_memory` : Deallocate heap memory.
+* `pl_realloc_memory` : Reallocate memory from heap.
+* `pl_alloc_plsr` : Duplicate plsr string as heap memory with null termination.
+* `pl_alloc_string` : Duplicate string as heap memory with null termination.
+* `pl_format_string` : Format string to heap memory with null termination.
+* `pl_clear_memory` : Clear memory area.
+* `plam_new` : Create plam in heap (with debt).
+* `plam_use` : Initiate plam to node (no debt for first node).
+* `plam_use_plam` : Initiate nested plam from plam (no debt for first node).
+* `plam_use_plbm` : Initiate nested plam from plbm (no debt for first node).
+* `plam_into_plam` : Deploy plam inside plam (no debt for nested).
+* `plam_into_plbm` : Deploy plam inside plbm (no debt for nested).
+* `plam_empty` : Create empty plam for heap allocations.
+* `plam_empty_into_plam` : Create empty nested plam for plam allocations.
+* `plam_empty_into_plbm` : Create empty nested plam for plbm allocations.
+* `plam_del` : Delete plam.
+* `plam_get` : Get allocation from plam.
+* `plam_get_aligned` : Get allocation from plam with alignment.
+* `plam_put` : Put allocation back to plam.
+* `plam_store` : Get allocation from plam and store the data.
+* `plam_store_ptr` : Get allocation from plam and store pointer value to it.
+* `plam_store_plsr` : Get allocation from plam and store the plsr content.
+* `plam_store_string` : Get allocation from plam and store the string.
+* `plam_format_string` : Format string to plam.
+* `plam_used` : Used memory of current node.
+* `plam_free` : Free memory in current node.
+* `plam_size` : Return node size.
+* `plam_node_capacity` : Return node capacity.
+* `plam_is_empty` : Is plam empty?
+* `plbm_new` : Create plbm in heap (with debt).
+* `plbm_new_with_count` : Create plbm in heap with block count.
+* `plbm_use` : Initiate plbm to node (no debt for first node).
+* `plbm_use_plam` : Initiate nested plbm from plam (no debt for first node).
+* `plbm_use_plbm` : Initiate nested plbm from plbm (no debt for first node).
+* `plbm_into_plam` : Deploy plbm inside plam (no debt for nested).
+* `plbm_into_plbm` : Deploy plbm inside plbm (no debt for nested).
+* `plbm_empty` : Create empty plbm.
+* `plbm_empty_into_plam` : Create empty nested plbm for plam allocations.
+* `plbm_empty_into_plbm` : Create empty nested plbm for plbm allocations.
+* `plbm_del` : Delete plbm.
+* `plbm_get` : Get allocation from plbm.
+* `plbm_put` : Put allocation back to plbm.
+* `plbm_store` : Get allocation from plbm and store the data.
+* `plbm_store_ptr` : Allocate storage for pointer and store its value.
+* `plbm_ref_ptr` : Reference pointer value from the given storage address.
+* `plbm_node_size` : Return node size.
+* `plbm_node_capacity` : Return node capacity.
+* `plbm_block_size` : Return block size.
+* `plbm_is_continuous` : Is plbm continuous?
+* `plbm_is_empty` : Is plbm empty?
+* `plcm_new` : Create plcm in heap (with debt).
+* `plcm_new_ptr` : Create plcm in heap (with debt) for pointers.
+* `plcm_use` : Create plcm to pre-existing allocation (no debt).
+* `plcm_use_plam` : Initiate nested plcm from plam (no debt).
+* `plcm_use_plbm` : Initiate nested plcm from plbm (no debt).
+* `plcm_empty` : Create empty plcm.
+* `plcm_empty_ptr` : Create empty plcm for pointers.
+* `plcm_del` : Delete plcm.
+* `plcm_resize` : Resize plcm allocation.
+* `plcm_increase` : Resize plcm allocation by increase.
+* `plcm_ensure` : Ensure that (future) value fits.
+* `plcm_compact` : Compact plcm allocation to minimum size.
+* `plcm_get_pos` : Get allocation from plcm as position.
+* `plcm_get_ref` : Get allocation from plcm as pointer reference.
+* `plcm_put` : Put allocation back to plcm.
+* `plcm_store` : Get allocation from plcm and store value to it.
+* `plcm_store_ptr` : Get allocation from plcm and store pointer value to it.
+* `plcm_store_null` : Get allocation from plcm and store null pointer value to it.
+* `plcm_ref` : Reference allocation from plcm.
+* `plcm_ref_ptr` : Reference pointer allocation from plcm.
+* `plcm_set` : Set value for data.
+* `plcm_set_ptr` : Set pointer value to pointer position.
+* `plcm_consume` : Consume allocation for value (in the allocation end position).
+* `plcm_pop` : Pop value from the end.
+* `plcm_pop_ptr` : Pop pointer value from the end.
+* `plcm_remove` : Remove data.
+* `plcm_remove_ptr` : Remove pointer.
+* `plcm_insert` : Insert data.
+* `plcm_insert_ptr` : Insert pointer.
+* `plcm_terminate` : Set terminating value after used data.
+* `plcm_terminate_ptr` : Set terminating value after used data for pointers.
+* `plcm_reset` : Reset used data to zero.
+* `plcm_clear` : Reset used data to zero and clear data.
+* `plcm_used` : Used memory size.
+* `plcm_used_ptr` : Used memory size as pointer count.
+* `plcm_size` : Allocated memory size.
+* `plcm_size_ptr` : Allocated memory size as pointers.
+* `plcm_data` : Return reference to data.
+* `plcm_debt` : Is plcm using debt?
+* `plcm_end` : Reference to end of data (after used).
+* `plcm_tail` : Reference of tail data.
+* `plcm_is_empty` : Is plcm empty?
+* `plcm_find_ptr` : Find pointer from plcm.
+* `plcm_find_with` : Find object from plcm.
+* `plum_use` : Initiate plum with allocator.
+* `plum_get` : Get allocation from plum.
+* `plum_put` : Put allocation back to plum.
+* `plum_store` : Get allocation from plum and store the data.
+* `plum_store_ptr` : Get allocation from plum and store pointer value to it.
+* `plum_update` : Update allocation size in plum.
+* `plum_type` : Return plum allocator (host) type.
+* `plum_host` : Return plum allocator (host).
+* `plss_from_plsr` : Create plss from plsr.
+* `plss_append` : Append plsr to plcm.
+* `plss_append_string` : Append c-string to plcm.
+* `plss_append_char` : Append char to plcm.
+* `plss_remove` : Remove sub-string.
+* `plss_insert` : Insert sub-string.
+* `plss_set` : Set (overwrite) plcm content.
+* `plss_compact` : Compact plss (pclm) allocation to minimum size.
+* `plss_format_string` : Format string to plcm, append.
+* `plss_reformat_string` : Format string to plcm, overwrite.
+* `plss_va_format_string` : Format string to plcm, append.
+* `plss_string` : String in plcm.
+* `plss_length` : String length in plcm.
+* `plss_ref` : String in plcm.
+* `plss_is_empty` : Is plss string empty?
+* `plsr_from_plcm` : Create plsr from plcm.
+* `plsr_from_string` : Create plsr from c-string.
+* `plsr_from_string_and_length` : Create plsr from c-string and length.
+* `plsr_string` : String in plsr.
+* `plsr_length` : String length in plsr.
+* `plsr_compare` : Compare two plsr.
+* `plsr_compare_n` : Compare two plsr for n characters.
+* `plsr_null` : Create a null plsr.
+* `plsr_is_null` : Is plsr null?
+* `plsr_is_empty` : Is plsr an empty string?
+* `plsr_next_line` : Return next line content, without the terminating newline.
+* `plsr_index` : Return indeced char.
+
+
+
 ## Plinth API documentation
 
 See Doxygen documentation. Documentation can be created with:

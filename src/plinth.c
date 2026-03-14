@@ -38,6 +38,11 @@ static pl_none plam__use_type( plam_t    plam,
     pl_node__init( node );
 }
 
+static pl_t plam__align_forward( pl_t ptr, pl_size_t align )
+{
+    return (pl_t)( (pl_size_t)( ptr + ( align - 1 ) ) & ~( align - 1 ) );
+}
+
 static pl_t pl_node__allocate( pl_size_t size, pl_aa_t type, pl_t host )
 {
     pl_node_t node;
@@ -466,6 +471,30 @@ pl_t plam_get( plam_t plam, pl_size_t size )
     ret = plam->node->data + plam->node->used;
     plam->node->used += size;
     return ret;
+}
+
+
+pl_t plam_get_aligned( plam_t plam, pl_size_t size, pl_size_t align )
+{
+    pl_t      current_ptr;
+    pl_t      aligned_ptr;
+    pl_size_t actual_size;
+
+    current_ptr = plam->node->data + plam->node->used;
+    if ( align == 0 ) {
+        aligned_ptr = current_ptr;
+        actual_size = size;
+    } else {
+        aligned_ptr = plam__align_forward( current_ptr, align );
+        actual_size = ( aligned_ptr - current_ptr ) + size;
+    }
+
+    if ( plam_free( plam ) < actual_size ) {
+        return plam_get( plam, size );
+    } else {
+        plam_get( plam, actual_size );
+        return aligned_ptr;
+    }
 }
 
 

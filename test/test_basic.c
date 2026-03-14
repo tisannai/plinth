@@ -318,6 +318,24 @@ void test_plam( void )
     plam_put( &plam2, 256 );
     plam_del( &plam2 );
     plam_del( &plam );
+
+    /* Aligned. */
+    plam_new( &plam, 1024 );
+    TEST_ASSERT_EQUAL( 0, plam_used( &plam ) );
+    m = plam_get_aligned( &plam, 256, 0 );
+    TEST_ASSERT_EQUAL( 256, plam_used( &plam ) );
+    TEST_ASSERT( m != NULL );
+    m = plam_get_aligned( &plam, 256, 8 );
+    TEST_ASSERT_EQUAL( 512, plam_used( &plam ) );
+    TEST_ASSERT( m != NULL );
+    m = plam_get_aligned( &plam, 256, 256 );
+    TEST_ASSERT_EQUAL( 768, plam_used( &plam ) );
+    TEST_ASSERT( m != NULL );
+    m = plam_get( &plam, 256 );
+    TEST_ASSERT_EQUAL( 256, plam_used( &plam ) );
+    TEST_ASSERT( m != NULL );
+    plam_del( &plam );
+    TEST_ASSERT_EQUAL( 0, plam_size( &plam ) );
 }
 
 

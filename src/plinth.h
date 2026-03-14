@@ -608,6 +608,18 @@ pl_t plam_get( plam_t plam, pl_size_t size );
 
 
 /**
+ * @brief Get allocation from plam with alignment.
+ *
+ * @param    plam   Plam handle.
+ * @param    size   Allocation size.
+ * @param    align  Alignment as byte size.
+ *
+ * @return Allocation.
+ */
+pl_t plam_get_aligned( plam_t plam, pl_size_t size, pl_size_t align );
+
+
+/**
  * @brief Put allocation back to plam.
  *
  * User is responsible in making the puts in reserver order with
