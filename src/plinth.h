@@ -109,7 +109,7 @@
  */
 #define pl_enum( name )             \
     typedef enum name##_e name##_t; \
-    typedef name##_t* name##_p; \
+    typedef name##_t*     name##_p; \
     enum name##_e
 
 
@@ -239,10 +239,11 @@ pl_struct_body( pl_node )
 };
 pl_struct( plam )
 {
-    pl_node_t node; /**< Current node. */
-    pl_size_t size; /**< Node size. */
-    pl_aa_t   type; /**< Reservation type. */
-    pl_t      host; /**< Allocator host (if any). */
+    pl_node_t node;  /**< Current node. */
+    pl_size_t size;  /**< Node size. */
+    pl_aa_t   type;  /**< Reservation type. */
+    pl_size_t align; /**< Alignment (0 for none). */
+    pl_t      host;  /**< Allocator host (if any). */
 };
 
 
@@ -394,6 +395,17 @@ pl_t pl_alloc_memory( pl_size_t size );
 
 
 /**
+ * @brief Allocate memory from heap (zeroed) and aligned.
+ *
+ * @param   size   Allocation size in bytes.
+ * @param   align  Alignment as byte size.
+ *
+ * @return  Pointer to allocation, or NULL.
+ */
+pl_t pl_alloc_aligned( pl_size_t size, pl_size_t align );
+
+
+/**
  * @brief Allocate memory from heap (non-zeroed).
  *
  * @param   size   Allocation size in bytes.
@@ -471,12 +483,28 @@ pl_t pl_clear_memory( pl_t mem, pl_size_t size );
 /**
  * @brief Create plam in heap (with debt).
  *
+ * NOTE: empty plam is setup if size is too small.
+ *
  * @param    plam   Plam handle.
  * @param    size   Node size.
  *
  * @return None.
  */
 pl_none plam_new( plam_t plam, pl_size_t size );
+
+
+/**
+ * @brief Create plam in heap (with debt), with alignment.
+ *
+ * NOTE: empty plam is setup if size is too small.
+ *
+ * @param    plam   Plam handle.
+ * @param    size   Node size.
+ * @param    align  Alignment.
+ *
+ * @return None.
+ */
+pl_none plam_new_aligned( plam_t plam, pl_size_t size, pl_size_t align );
 
 
 /**
@@ -550,6 +578,23 @@ pl_none plam_into_plbm( plam_t plam, plbm_t host );
  * @return None.
  */
 pl_none plam_empty( plam_t plam, pl_size_t size );
+
+
+/**
+ * @brief Create empty plam for heap allocations, with alignment.
+ *
+ * Empty plam is a placeholder with handle setup for allocations.
+ * However, no heap allocations are made at creation, i.e. this allows
+ * lazy behavior.
+ *
+ * @param    plam   Plam handle.
+ * @param    size   Node size.
+ * @param    align  Alignment.
+ *
+ * @return None.
+ */
+pl_none plam_empty_aligned( plam_t plam, pl_size_t size, pl_size_t align );
+
 
 
 /**
