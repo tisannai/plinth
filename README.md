@@ -482,6 +482,7 @@ Function listing:
 * `pl_ui_init` : Initialize ui structure.
 * `pl_ui_do` : Use Universal Interface.
 * `pl_alloc_memory` : Allocate memory from heap (zeroed).
+* `pl_alloc_aligned` : Allocate memory from heap (zeroed) and aligned.
 * `pl_alloc_only` : Allocate memory from heap (non-zeroed).
 * `pl_free_memory` : Deallocate heap memory.
 * `pl_realloc_memory` : Reallocate memory from heap.
@@ -490,12 +491,14 @@ Function listing:
 * `pl_format_string` : Format string to heap memory with null termination.
 * `pl_clear_memory` : Clear memory area.
 * `plam_new` : Create plam in heap (with debt).
+* `plam_new_aligned` : Create plam in heap (with debt), with alignment.
 * `plam_use` : Initiate plam to node (no debt for first node).
 * `plam_use_plam` : Initiate nested plam from plam (no debt for first node).
 * `plam_use_plbm` : Initiate nested plam from plbm (no debt for first node).
 * `plam_into_plam` : Deploy plam inside plam (no debt for nested).
 * `plam_into_plbm` : Deploy plam inside plbm (no debt for nested).
 * `plam_empty` : Create empty plam for heap allocations.
+* `plam_empty_aligned` : Create empty plam for heap allocations, with alignment.
 * `plam_empty_into_plam` : Create empty nested plam for plam allocations.
 * `plam_empty_into_plbm` : Create empty nested plam for plbm allocations.
 * `plam_del` : Delete plam.
