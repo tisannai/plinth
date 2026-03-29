@@ -365,7 +365,7 @@ pl_struct( plsr )
  * Declare stack local plcm with "name" and reserve array, with
  * "size", for storage.
  */
-#define plss_use( name, size )              \
+#define plcm_declare( name, size )          \
     plcm_s name;                            \
     char   name##_plss_declare[ ( size ) ]; \
     plcm_use( &name, name##_plss_declare, ( size ) )
