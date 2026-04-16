@@ -44,14 +44,14 @@ deallocated with `pl_free_memory()`.
 ## Arena Memory Allocator
 
 `plam` is the fundamental memory allocator in Plinth. It is an Arena
-type allocator. `plam` consists of one or more Nodes, which are
-chained together as a doubly linked list. Each allocation from `plam`
-is a continuous chunk of memory from a Node. When the memory from one
-Node is exhausted, a new Node is allocated and added to the chain.
-Memory can be deallocated back to `plam`, but only in the reverse
-order it was reserved, and each deallocation must be annotated with
-its size. `plam` does not keep track of the detailed allocation
-history.
+type allocator, and can be used also as a stack allocator. `plam`
+consists of one or more Nodes, which are chained together as a doubly
+linked list. Each allocation from `plam` is a continuous chunk of
+memory from a Node. When the memory from one Node is exhausted, a new
+Node is allocated and added to the chain. Memory can be deallocated
+back to `plam`, but only in the reverse order it was reserved, and
+each deallocation must be annotated with its size. `plam` does not
+keep track of the detailed allocation history.
 
 ```
            plam_node_s
@@ -109,15 +109,16 @@ scenarios.
 
 ## Block Memory Allocator
 
-`plbm` is a Block Memory Allocator. It allocates "small" Blocks of
-memory with fixed sizes. The Blocks can be allocated and deallocated
-in any order. Under the hood, the deallocated Blocks are maintained in
-a linked list. Head points to the start of the list. Each Block is a
-continuous chunk of memory, but memory between Blocks is not
-guaranteed to be continuous. However, back-to-back allocations (no
-deallocations in between) from a particular Node are continuous.
-`plbm` shares the same Node structure as `plam`. Each Node in `plbm`
-contains usually multiple Blocks, but one is the minimum.
+`plbm` is a Block Memory Allocator (also known as pool allocator). It
+allocates "small" Blocks of memory with fixed sizes. The Blocks can be
+allocated and deallocated in any order. Under the hood, the
+deallocated Blocks are maintained in a linked list. Head points to the
+start of the list. Each Block is a continuous chunk of memory, but
+memory between Blocks is not guaranteed to be continuous. However,
+back-to-back allocations (no deallocations in between) from a
+particular Node are continuous. `plbm` shares the same Node structure
+as `plam`. Each Node in `plbm` contains usually multiple Blocks, but
+one is the minimum.
 
 ```
            ..       .-.
@@ -166,7 +167,7 @@ scenarios.
 
 `plcm` is a Continuous Memory Allocator. `plcm` is used when a
 continuous chunk of memory is required. This is typical for strings
-and other arrays of items.
+and other arrays of elements.
 
 ```
            plcm_s    data
@@ -219,7 +220,7 @@ allocation is also the last.
 
 ## Unified Memory Allocator
 
-`plum` is the Unified Memory Allocator in Plinth. It provides an
+`plum` is the Unified Memory Allocator in Plinth. It provides a
 unified interface to the other allocators in Plinth, including the
 Basic Memory Allocation (BMA). The underlying, actual, allocator is
 called a host.
@@ -473,8 +474,8 @@ from the master side. While the interface is universal, the
 communicating parties are, obviously, required to agree on the
 communication content details in advance. The opaque datastructure
 referenced by `argi`, contains typically an ID field as the first
-struct field (follow by actual payload). The ID field can be used to
-identify the type of provided content.
+struct field (follow by the actual payload). The ID field can be used
+to identify the type of the provided content.
 
 
 Function listing:

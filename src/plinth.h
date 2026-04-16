@@ -596,7 +596,6 @@ pl_none plam_empty( plam_t plam, pl_size_t size );
 pl_none plam_empty_aligned( plam_t plam, pl_size_t size, pl_size_t align );
 
 
-
 /**
  * @brief Create empty nested plam for plam allocations.
  *
