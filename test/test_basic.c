@@ -273,6 +273,11 @@ void test_plam( void )
         TEST_ASSERT( m != NULL );
     }
     TEST_ASSERT_EQUAL( 768, plam_used( &plam ) );
+
+    m = plam_get( &plam, 256 );
+    plam_clear( &plam );
+    TEST_ASSERT_EQUAL( 0, plam_used( &plam ) );
+
     plam_del( &plam );
 
 
@@ -531,9 +536,19 @@ void test_plbm( void )
     plbm_del( &plbm );
 
     plbm_use( &plbm, mem, 1024, 8 );
-    m1 = plbm_store_ptr( &plbm, s1 );
+    m1 = plbm_store( &plbm, &s1 );
     m2 = plbm_store_ptr( &plbm, s2 );
     plbm_put( &plbm, m1 );
+    s1 = plbm_ref_ptr( &plbm, m2 );
+    TEST_ASSERT_TRUE( !strcmp( s2, s1 ) );
+    plbm_del( &plbm );
+
+    plbm_use( &plbm, mem, 1024, 512 );
+    m1 = plbm_store_ptr( &plbm, s1 );
+    m2 = plbm_store_ptr( &plbm, s2 );
+    plbm_clear( &plbm );
+    m1 = plbm_store_ptr( &plbm, s1 );
+    m2 = plbm_store_ptr( &plbm, s2 );
     s1 = plbm_ref_ptr( &plbm, m2 );
     TEST_ASSERT_TRUE( !strcmp( s2, s1 ) );
     plbm_del( &plbm );
@@ -1016,4 +1031,246 @@ void test_ui( void )
     msg_out = "hello";
     pl_ui_do( &ui, msg_out, &msg_in );
     TEST_ASSERT( strcmp( msg_out, msg_in ) == 0 );
+}
+
+
+void test_array( void )
+{
+    pl_size_t size;
+    pl_size_t step;
+    plcm_s    plcm;
+    plar_s    plar;
+    char*     s1;
+    char*     ch;
+    int       index;
+
+    size = 16;
+    step = 1;
+
+    plcm_new( &plcm, size );
+    s1 = "testing...";
+    plss_append_string( &plcm, s1 );
+    plar = plar_init( plcm_data( &plcm ), step, plss_length( &plcm ) );
+    TEST_ASSERT_EQUAL( strlen( s1 ), plar_size( plar ) );
+    TEST_ASSERT_EQUAL( step, plar_step( plar ) );
+    TEST_ASSERT( strcmp( s1, plar_data( plar ) ) == 0 );
+
+    index = 0;
+    ch = plar_get( plar, index );
+    TEST_ASSERT_EQUAL( s1[ index ], *ch );
+
+    index = 1;
+    ch = plar_get( plar, index );
+    TEST_ASSERT_EQUAL( s1[ index ], *ch );
+
+    index = plar_size( plar );
+    ch = plar_get( plar, index );
+    TEST_ASSERT_EQUAL( s1[ index ], *ch );
+
+    plar_set( plar, 2, 3, &s1[ 0 ] );
+    TEST_ASSERT( strcmp( "tetesng...", plar_data( plar ) ) == 0 );
+
+    plar = plar_insert( plar, 2, 3, &s1[ 0 ] );
+    TEST_ASSERT( strncmp( "tetestesng...", plar_data( plar ), 13 ) == 0 );
+
+    plar = plar_remove( plar, 2, 3 );
+    TEST_ASSERT( strncmp( "tetesng...", plar_data( plar ), 10 ) == 0 );
+
+    plar = plar_remove( plar, 0, 2 );
+    TEST_ASSERT( strncmp( "tesng...", plar_data( plar ), 8 ) == 0 );
+
+    plar = plar_remove( plar, 0, 2 );
+    TEST_ASSERT( strncmp( "sng...", plar_data( plar ), 6 ) == 0 );
+
+    plar = plar_remove( plar, 3, 3 );
+    TEST_ASSERT( strncmp( "sng", plar_data( plar ), 3 ) == 0 );
+
+    TEST_ASSERT_EQUAL( 2, plar_size_of_slice( plar, 2 ) );
+    TEST_ASSERT_EQUAL( 3, plar_size_in_bytes( plar ) );
+
+    plcm_del( &plcm );
+}
+
+
+void test_plls( void )
+{
+    char*       ss[ 5 ];
+    plbm_s      plbm;
+    plls_s      plls;
+    plls_node_t node;
+    pl_size_t   node_size;
+    int         i;
+
+    node_size = sizeof( pl_t ) + plls_node_overhead();
+    ss[ 0 ] = "text0";
+    ss[ 1 ] = "text1";
+    ss[ 2 ] = "text2";
+    ss[ 3 ] = "text3";
+    ss[ 4 ] = "text4";
+
+    plbm_new( &plbm, 128 * node_size, node_size );
+    plls = plls_init( &plbm );
+    plls_store( &plls, ss[ 1 ] );
+    plls_store( &plls, ss[ 3 ] );
+    node = plls_head( &plls );
+    plls_append( &plls, node, ss[ 2 ] );
+    plls_store( &plls, ss[ 4 ] );
+    plls_insert( &plls, ss[ 0 ] );
+
+    node = plls_head( &plls );
+    i = 0;
+    while ( i < 5 ) {
+        TEST_ASSERT( strcmp( ss[ i ], plls_node_data( node ) ) == 0 );
+        node = plls_node_next( node );
+        i++;
+    }
+    node = plls_node_next( node );
+    TEST_ASSERT_EQUAL( NULL, node );
+
+
+    node = plls_tail( &plls );
+    TEST_ASSERT( strcmp( ss[ 4 ], plls_node_data( node ) ) == 0 );
+    TEST_ASSERT( plls_node_at_end( node ) );
+
+    node = plls_head( &plls );
+    TEST_ASSERT( strcmp( ss[ 0 ], plls_node_data( node ) ) == 0 );
+    TEST_ASSERT( plls_node_at_start( node, &plls ) );
+
+    /* 01234
+       ^     */
+    node = plls_remove_head( &plls );
+    TEST_ASSERT_EQUAL( 4, plls_size( &plls ) );
+    TEST_ASSERT( strcmp( ss[ 1 ], plls_node_data( node ) ) == 0 );
+
+    /* 1234
+       ^     */
+    node = plls_remove( &plls, node );
+    TEST_ASSERT_EQUAL( 3, plls_size( &plls ) );
+    TEST_ASSERT( strcmp( ss[ 1 ], plls_node_data( node ) ) == 0 );
+
+    /* 134
+       ^     */
+    node = plls_remove( &plls, node );
+    TEST_ASSERT_EQUAL( 2, plls_size( &plls ) );
+    TEST_ASSERT( strcmp( ss[ 1 ], plls_node_data( node ) ) == 0 );
+
+    /* 14
+       ^     */
+    node = plls_remove( &plls, node );
+    TEST_ASSERT_EQUAL( 1, plls_size( &plls ) );
+    TEST_ASSERT( strcmp( ss[ 1 ], plls_node_data( node ) ) == 0 );
+
+    /* 1
+       ^     */
+    node = plls_remove( &plls, node );
+    TEST_ASSERT_EQUAL( 0, plls_size( &plls ) );
+
+    plls_insert( &plls, ss[ 0 ] );
+    TEST_ASSERT( strcmp( ss[ 0 ], plls_node_data( plls.head ) ) == 0 );
+
+    node = plls_remove_head( &plls );
+    TEST_ASSERT_EQUAL( 0, plls_size( &plls ) );
+    node = plls_remove_head( &plls );
+    TEST_ASSERT_EQUAL( 0, plls_size( &plls ) );
+    node = plls_remove( &plls, NULL );
+    TEST_ASSERT_EQUAL( 0, plls_size( &plls ) );
+    TEST_ASSERT_EQUAL( NULL, plls_node_data( NULL ) );
+    TEST_ASSERT_EQUAL( pl_false, plls_node_at_start( NULL, &plls ) );
+    TEST_ASSERT_EQUAL( pl_false, plls_node_at_end( NULL ) );
+    TEST_ASSERT_EQUAL( &plbm, plls_host( &plls ) );
+}
+
+
+void test_plld( void )
+{
+    char*       ss[ 5 ];
+    plbm_s      plbm;
+    plld_s      plld;
+    plld_node_t node;
+    pl_size_t   node_size;
+    int         i;
+
+    node_size = sizeof( pl_t ) + plld_node_overhead();
+    ss[ 0 ] = "text0";
+    ss[ 1 ] = "text1";
+    ss[ 2 ] = "text2";
+    ss[ 3 ] = "text3";
+    ss[ 4 ] = "text4";
+
+    plbm_new( &plbm, 128 * node_size, node_size );
+    plld = plld_init( &plbm );
+    plld_store( &plld, ss[ 2 ] );
+    plld_store( &plld, ss[ 4 ] );
+    node = plld_node_prev( plld_tail( &plld ) );
+    plld_append( &plld, node, ss[ 3 ] );
+    node = plld_head( &plld );
+    plld_insert( &plld, node, ss[ 0 ] );
+    plld_insert( &plld, node, ss[ 1 ] );
+
+    node = plld_head( &plld );
+    i = 0;
+    while ( i < 5 ) {
+        TEST_ASSERT( strcmp( ss[ i ], plld_node_data( node ) ) == 0 );
+        node = plld_node_next( node );
+        i++;
+    }
+    node = plld_node_next( node );
+    TEST_ASSERT_EQUAL( NULL, node );
+
+
+    node = plld_tail( &plld );
+    i = 5 - 1;
+    while ( i >= 0 ) {
+        TEST_ASSERT( strcmp( ss[ i ], plld_node_data( node ) ) == 0 );
+        node = plld_node_prev( node );
+        i--;
+    }
+    node = plld_node_prev( node );
+    TEST_ASSERT_EQUAL( NULL, node );
+
+    node = plld_tail( &plld );
+    TEST_ASSERT( strcmp( ss[ 4 ], plld_node_data( node ) ) == 0 );
+    TEST_ASSERT( plld_node_at_end( node ) );
+    node = plld_node_prev( node );
+    TEST_ASSERT( strcmp( ss[ 3 ], plld_node_data( node ) ) == 0 );
+    TEST_ASSERT_EQUAL( 5, plld_size( &plld ) );
+    /* 01234
+          ^  */
+    node = plld_remove( &plld, node );
+    TEST_ASSERT_EQUAL( 4, plld_size( &plld ) );
+    TEST_ASSERT( strcmp( ss[ 4 ], plld_node_data( node ) ) == 0 );
+    /* 0124
+          ^ */
+    node = plld_remove( &plld, node );
+    TEST_ASSERT_EQUAL( 3, plld_size( &plld ) );
+    TEST_ASSERT( strcmp( ss[ 2 ], plld_node_data( node ) ) == 0 );
+    /* 012
+       ^   */
+    node = plld_head( &plld );
+    node = plld_remove( &plld, node );
+    TEST_ASSERT_EQUAL( 2, plld_size( &plld ) );
+    TEST_ASSERT( strcmp( ss[ 1 ], plld_node_data( node ) ) == 0 );
+    /* 12
+       ^   */
+    node = plld_remove( &plld, node );
+    TEST_ASSERT_EQUAL( 1, plld_size( &plld ) );
+    TEST_ASSERT( strcmp( ss[ 2 ], plld_node_data( node ) ) == 0 );
+    /* 2
+       ^   */
+    node = plld_remove( &plld, node );
+    TEST_ASSERT_EQUAL( 0, plld_size( &plld ) );
+    TEST_ASSERT_EQUAL( NULL, plld_node_data( node ) );
+
+    node = plld_remove( &plld, node );
+    TEST_ASSERT_EQUAL( 0, plld_size( &plld ) );
+    TEST_ASSERT_EQUAL( NULL, plld_node_data( node ) );
+
+    TEST_ASSERT_EQUAL( &plbm, plld_host( &plld ) );
+    TEST_ASSERT( !plld_node_at_end( node ) );
+    TEST_ASSERT( !plld_node_at_start( node ) );
+
+    plld_insert( &plld, NULL, ss[ 0 ] );
+    node = plld_head( &plld );
+    TEST_ASSERT( plld_node_at_start( node ) );
+    TEST_ASSERT( strcmp( ss[ 0 ], plld_node_data( node ) ) == 0 );
 }

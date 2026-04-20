@@ -147,7 +147,6 @@ static pl_node_t pl_node__del( pl_node_t node, pl_size_t size, pl_aa_t type, pl_
 }
 
 
-
 static pl_bool_t plbm__is_valid( pl_size_t nsize, pl_size_t bsize )
 {
     if ( ( nsize > sizeof( pl_node_s ) + bsize ) && bsize >= sizeof( pl_t ) ) {
@@ -207,7 +206,6 @@ static pl_none plcm__init( plcm_t plcm )
 }
 
 
-
 static pl_none plss__terminate( plcm_t plcm )
 {
     *( (char*)( plcm->data + plcm->used ) ) = 0;
@@ -221,24 +219,6 @@ static pl_none plss__terminate( plcm_t plcm )
 
 
 pl_none pl_dummy( pl_none ) {} /* GCOV_EXCL_LINE */
-
-
-/* ------------------------------------------------------------
- * Universal Interface:
- */
-
-pl_none pl_ui_init( pl_ui_t ui, pl_t env, pl_ui_f fun )
-{
-    ui->env = env;
-    ui->fun = fun;
-}
-
-
-pl_none pl_ui_do( pl_ui_t ui, pl_t argi, pl_t argo )
-{
-    ui->fun( ui->env, argi, argo );
-}
-
 
 
 
@@ -583,6 +563,20 @@ pl_none plam_put( plam_t plam, pl_size_t size )
 }
 
 
+pl_none plam_clear( plam_t plam )
+{
+    while ( 1 ) {
+        if ( plam->node->used > 0 ) {
+            plam->node->used = 0;
+        } else if ( plam->node->prev ) {
+            plam->node = plam->node->prev;
+        } else {
+            break;
+        }
+    }
+}
+
+
 pl_t plam_store( plam_t plam, const pl_t data, pl_size_t size )
 {
     pl_t mem;
@@ -789,16 +783,20 @@ pl_t plbm_get( plbm_t plbm )
         ret = plbm->node->data + ( ( plbm__itail( plbm ) - plbm->itail ) * plbm->bsize );
         plbm->itail--;
     } else {
-        /* Allocate new node. */
+        /* Allocate new node (or reuse old). */
         pl_node_t node;
-        node = pl_node__allocate( plbm->nsize, plbm->type, plbm->host, 0 );
-        if ( node == NULL ) {
-            /* GCOV_EXCL_START */
-            return NULL;
-            /* GCOV_EXCL_STOP */
+        if ( plbm->node->next ) {
+            node = plbm->node->next;
+        } else {
+            node = pl_node__allocate( plbm->nsize, plbm->type, plbm->host, 0 );
+            if ( node == NULL ) {
+                /* GCOV_EXCL_START */
+                return NULL;
+                /* GCOV_EXCL_STOP */
+            }
+            plbm->node->next = node;
+            node->prev = plbm->node;
         }
-        plbm->node->next = node;
-        node->prev = plbm->node;
         plbm->node = node;
         ret = node->data;
         plbm->itail = plbm__itail( plbm );
@@ -823,7 +821,25 @@ pl_none plbm_put( plbm_t plbm, pl_t block )
 }
 
 
-pl_t plbm_store( plbm_t plbm, const pl_t data, pl_size_t size )
+pl_none plbm_clear( plbm_t plbm )
+{
+    plbm->node->used = 0;
+    while ( plbm->node->prev ) {
+        plbm->node = plbm->node->prev;
+        plbm->node->used = 0;
+    }
+    plbm->itail = plbm__itail( plbm );
+    plbm->head = NULL;
+}
+
+
+pl_t plbm_store( plbm_t plbm, const pl_t data )
+{
+    return plbm_store_with_size( plbm, data, plbm->bsize );
+}
+
+
+pl_t plbm_store_with_size( plbm_t plbm, const pl_t data, pl_size_t size )
 {
     pl_t storage;
     storage = plbm_get( plbm );
@@ -834,7 +850,7 @@ pl_t plbm_store( plbm_t plbm, const pl_t data, pl_size_t size )
 
 pl_t plbm_store_ptr( plbm_t plbm, pl_t ptr )
 {
-    return plbm_store( plbm, &ptr, sizeof( pl_t ) );
+    return plbm_store_with_size( plbm, &ptr, sizeof( pl_t ) );
 }
 
 
@@ -1313,6 +1329,7 @@ pl_pos_t plcm_find_with( plcm_t plcm, plcm_compare_fn_t compare, pl_size_t size,
 }
 
 
+
 /* ------------------------------------------------------------
  * Unified Memory Allocator:
  */
@@ -1490,6 +1507,7 @@ pl_t plum_host( plum_t plum )
 {
     return plum->host;
 }
+
 
 
 /* ------------------------------------------------------------
@@ -1905,4 +1923,654 @@ char plsr_index( plsr_s plsr, pl_pos_t index )
     } else {
         return 0;
     }
+}
+
+
+
+/* ------------------------------------------------------------
+ * Universal Interface:
+ */
+
+pl_none pl_ui_init( pl_ui_t ui, pl_t env, pl_ui_fn_t fun )
+{
+    ui->env = env;
+    ui->fun = fun;
+}
+
+
+pl_none pl_ui_do( pl_ui_t ui, pl_t argi, pl_t argo )
+{
+    ui->fun( ui->env, argi, argo );
+}
+
+
+
+/* ------------------------------------------------------------
+ * Array:
+ */
+
+plar_s plar_init( pl_t data, pl_size_t step, pl_size_t size )
+{
+    return (plar_s){ data, step, size };
+}
+
+
+pl_t plar_get( plar_s plar, pl_size_t index )
+{
+    return ( plar.data + ( index * plar.step ) );
+}
+
+
+pl_none plar_set( plar_s plar, pl_size_t index, pl_size_t count, pl_t data )
+{
+    memcpy( plar.data + ( index * plar.step ), data, count * plar.step );
+}
+
+
+plar_s plar_insert( plar_s plar, pl_size_t index, pl_size_t count, pl_t data )
+{
+    /*
+     *        === c
+     *     ++++++++   ->   +++===+++++
+     *        i               i
+     */
+    memmove( plar.data + ( ( index + count ) * plar.step ),
+             plar.data + ( index * plar.step ),
+             ( plar.size - index ) * plar.step );
+
+    plar_set( plar, index, count, data );
+
+    plar.size += count;
+
+    return plar;
+}
+
+
+plar_s plar_remove( plar_s plar, pl_size_t index, pl_size_t count )
+{
+    /*
+     *        .-. c
+     *     +++---+++++   ->   ++++++++
+     *        i                  i
+     */
+    memmove( plar.data + ( index * plar.step ),
+             plar.data + ( ( index + count ) * plar.step ),
+             ( plar.size - index - count ) * plar.step );
+
+    plar.size -= count;
+
+    return plar;
+}
+
+
+pl_size_t plar_size_of_slice( plar_s plar, pl_size_t count )
+{
+    return ( count * plar.step );
+}
+
+
+pl_size_t plar_size_in_bytes( plar_s plar )
+{
+    return ( plar.size * plar.step );
+}
+
+
+pl_t plar_data( plar_s plar )
+{
+    return plar.data;
+}
+
+
+pl_size_t plar_step( plar_s plar )
+{
+    return plar.step;
+}
+
+
+pl_size_t plar_size( plar_s plar )
+{
+    return plar.size;
+}
+
+
+
+/* ------------------------------------------------------------
+ * List (singly-linked):
+ */
+
+plls_s plls_init( plbm_t plbm )
+{
+    return (plls_s){ plbm, NULL, NULL, 0 };
+}
+
+
+pl_none plls_append( plls_t plls, plls_node_t place, const pl_t data )
+{
+    plls_append_with_size(
+        plls, place, data, plbm_block_size( plls->host ) - plls_node_overhead() );
+}
+
+
+pl_none plls_append_with_size( plls_t plls, plls_node_t place, const pl_t data, pl_size_t size )
+{
+    plls_node_t node;
+
+    node = plbm_get( plls->host );
+    plls->size++;
+
+    if ( plls->head ) {
+
+        if ( place == plls->tail ) {
+
+            /*
+              Append to list end.
+                                      ,place
+                  +---+    +---+    +---+
+                  |   |--->|   |--->|   |--->
+                  +---+    +---+    +---+    |
+                                            ---
+             */
+            node->next = NULL;
+            plls->tail->next = node;
+            plls->tail = node;
+
+        } else {
+
+            /*
+
+              Append after place.
+                             ,place
+                  +---+    +---+    +---+
+                  |   |--->|   |--->|   |--->
+                  +---+    +---+    +---+    |
+                                            ---
+             */
+            node->next = place->next;
+            place->next = node;
+        }
+    } else {
+        node->next = NULL;
+        plls->head = node;
+        plls->tail = node;
+    }
+
+    memcpy( node->data, data, size );
+}
+
+
+pl_none plls_insert( plls_t plls, const pl_t data )
+{
+    plls_insert_with_size( plls, data, plbm_block_size( plls->host ) - plls_node_overhead() );
+}
+
+
+pl_none plls_insert_with_size( plls_t plls, const pl_t data, pl_size_t size )
+{
+    plls_node_t node;
+
+    node = plbm_get( plls->host );
+    plls->size++;
+
+    if ( plls->head ) {
+
+        /*
+          Insert to list start.
+                ,place
+              +---+    +---+    +---+
+              |   |--->|   |--->|   |--->
+              +---+    +---+    +---+    |
+                                        ---
+         */
+        node->next = plls->head;
+        plls->head = node;
+
+    } else {
+
+        node->next = NULL;
+        plls->head = node;
+        plls->tail = node;
+    }
+
+    memcpy( node->data, data, size );
+}
+
+
+plls_node_t plls_remove( plls_t plls, plls_node_t place )
+{
+    if ( plls->head && ( ( place == plls->head ) || ( place && place->next ) ) ) {
+
+        /* NOTE: plbm_put overwrites the node content. Therefore we
+           must first re-arrange plls_node next and prev pointers, and
+           only after this, we put back the block to plbm. */
+
+        plls->size--;
+
+        if ( place == plls->head && place->next == NULL ) {
+
+            /* Remove the only node. */
+            plls->head = NULL;
+            plls->tail = NULL;
+            plbm_put( plls->host, place );
+            return NULL;
+
+        } else if ( place->next == plls->tail ) {
+
+            /* Remove tail node. */
+            plls->tail = place;
+            place = place->next;
+            plls->tail->next = NULL;
+            plbm_put( plls->host, place );
+            return plls->tail;
+
+        } else {
+
+            /*
+              Remove node in the middle.
+                             ,place
+                  +---+    +---+    +---+
+                  |   |--->|   |--->|   |--->
+                  +---+    +---+    +---+    |
+                                            ---
+             */
+            plls_node_t node;
+            node = place->next;
+            place->next = place->next->next;
+            plbm_put( plls->host, node );
+            return place;
+        }
+
+    } else {
+
+        return NULL;
+    }
+}
+
+
+plls_node_t plls_remove_head( plls_t plls )
+{
+    if ( plls->head ) {
+
+        plls->size--;
+
+        if ( plls->head->next == NULL ) {
+
+            /* Remove the only node. */
+            plls_node_t place;
+            place = plls->head;
+            plls->head = NULL;
+            plls->tail = NULL;
+            plbm_put( plls->host, place );
+            return NULL;
+
+        } else {
+
+            plls_node_t place;
+            place = plls->head;
+            plls->head = plls->head->next;
+            plbm_put( plls->host, place );
+            return plls->head;
+        }
+
+    } else {
+
+        return NULL;
+    }
+}
+
+
+pl_none plls_store( plls_t plls, const pl_t data )
+{
+
+    plls_store_with_size( plls, data, plbm_block_size( plls->host ) - plls_node_overhead() );
+}
+
+
+pl_none plls_store_with_size( plls_t plls, const pl_t data, pl_size_t size )
+{
+    plls_append_with_size( plls, plls->tail, data, size );
+}
+
+
+pl_size_t plls_node_overhead( void )
+{
+    return sizeof( plls_node_s );
+}
+
+
+pl_t plls_node_data( plls_node_t node )
+{
+    if ( node ) {
+        return node->data;
+    } else {
+        return NULL;
+    }
+}
+
+
+plls_node_t plls_node_next( plls_node_t node )
+{
+    if ( node ) {
+        return node->next;
+    } else {
+        return NULL;
+    }
+}
+
+
+pl_bool_t plls_node_at_start( plls_node_t node, plls_t plls )
+{
+    if ( node && node == plls->head ) {
+        return pl_true;
+    } else {
+        return pl_false;
+    }
+}
+
+
+pl_bool_t plls_node_at_end( plls_node_t node )
+{
+    if ( node && node->next == NULL ) {
+        return pl_true;
+    } else {
+        return pl_false;
+    }
+}
+
+
+plbm_t plls_host( plls_t plls )
+{
+    return plls->host;
+}
+
+
+plls_node_t plls_head( plls_t plls )
+{
+    return plls->head;
+}
+
+
+plls_node_t plls_tail( plls_t plls )
+{
+    return plls->tail;
+}
+
+
+pl_size_t plls_size( plls_t plls )
+{
+    return plls->size;
+}
+
+
+
+/* ------------------------------------------------------------
+ * List (doubly-linked):
+ */
+
+plld_s plld_init( plbm_t plbm )
+{
+    return (plld_s){ plbm, NULL, NULL, 0 };
+}
+
+
+pl_none plld_append( plld_t plld, plld_node_t place, const pl_t data )
+{
+    plld_append_with_size(
+        plld, place, data, plbm_block_size( plld->host ) - plld_node_overhead() );
+}
+
+
+pl_none plld_append_with_size( plld_t plld, plld_node_t place, const pl_t data, pl_size_t size )
+{
+    plld_node_t node;
+
+    node = plbm_get( plld->host );
+    plld->size++;
+
+    if ( plld->head ) {
+
+        if ( place == plld->tail ) {
+
+            /*
+              Append to list end.
+                                      ,place
+                  +---+    +---+    +---+
+                  |   |--->|   |--->|   |--->
+                  +---+    +---+    +---+    |
+                                            ---
+             */
+            node->prev = plld->tail;
+            node->next = NULL;
+            plld->tail->next = node;
+            plld->tail = node;
+
+        } else {
+
+            /*
+
+              Append after place.
+                             ,place
+                  +---+    +---+    +---+
+                  |   |--->|   |--->|   |--->
+                  +---+    +---+    +---+    |
+                                            ---
+             */
+            node->prev = place;
+            node->next = place->next;
+            place->next = node;
+            node->next->prev = node;
+        }
+    } else {
+        node->prev = NULL;
+        node->next = NULL;
+        plld->head = node;
+        plld->tail = node;
+    }
+
+    memcpy( node->data, data, size );
+}
+
+
+pl_none plld_insert( plld_t plld, plld_node_t place, const pl_t data )
+{
+    plld_insert_with_size(
+        plld, place, data, plbm_block_size( plld->host ) - plld_node_overhead() );
+}
+
+
+pl_none plld_insert_with_size( plld_t plld, plld_node_t place, const pl_t data, pl_size_t size )
+{
+    plld_node_t node;
+
+    node = plbm_get( plld->host );
+    plld->size++;
+
+    if ( plld->head ) {
+
+        if ( place == plld->head ) {
+
+            /*
+              Insert to list start.
+                    ,place
+                  +---+    +---+    +---+
+                  |   |--->|   |--->|   |--->
+                  +---+    +---+    +---+    |
+                                            ---
+             */
+            node->prev = NULL;
+            node->next = place;
+            place->prev = node;
+            plld->head = node;
+
+        } else {
+
+            /*
+              Insert before place.
+                             ,place
+                  +---+    +---+    +---+
+                  |   |--->|   |--->|   |--->
+                  +---+    +---+    +---+    |
+                                            ---
+             */
+            node->prev = place->prev;
+            node->next = place;
+            place->prev->next = node;
+            place->prev = node;
+        }
+    } else {
+        node->prev = NULL;
+        node->next = NULL;
+        plld->head = node;
+        plld->tail = node;
+    }
+
+    memcpy( node->data, data, size );
+}
+
+
+plld_node_t plld_remove( plld_t plld, plld_node_t place )
+{
+    if ( plld->head && place ) {
+
+        /* NOTE: plbm_put overwrites the node content. Therefore we
+           must first re-arrange plld_node next and prev pointers, and
+           only after this, we put back the block to plbm. */
+
+        plld->size--;
+
+        if ( place->prev == NULL && place->next == NULL ) {
+
+            /* Remove the only node. */
+            plld->head = NULL;
+            plld->tail = NULL;
+            plbm_put( plld->host, place );
+            return NULL;
+
+        } else if ( place == plld->head ) {
+
+            /* Remove head node. */
+            place->next->prev = NULL;
+            plld->head = place->next;
+            plbm_put( plld->host, place );
+            return plld->head;
+
+        } else if ( place == plld->tail ) {
+
+            /* Remove tail node. */
+            plld->tail = place->prev;
+            plld->tail->next = NULL;
+            plbm_put( plld->host, place );
+            return plld->tail;
+
+        } else {
+
+            /*
+              Remove node in the middle.
+                             ,place
+                  +---+    +---+    +---+
+                  |   |--->|   |--->|   |--->
+                  +---+    +---+    +---+    |
+                                            ---
+             */
+            place->next->prev = place->prev;
+            place->prev->next = place->next;
+            plbm_put( plld->host, place );
+            return place->next;
+        }
+
+    } else {
+
+        return NULL;
+    }
+}
+
+
+pl_none plld_store( plld_t plld, const pl_t data )
+{
+    plld_store_with_size( plld, data, plbm_block_size( plld->host ) - plld_node_overhead() );
+}
+
+
+pl_none plld_store_with_size( plld_t plld, const pl_t data, pl_size_t size )
+{
+    plld_append_with_size( plld, plld->tail, data, size );
+}
+
+
+pl_size_t plld_node_overhead( void )
+{
+    return sizeof( plld_node_s );
+}
+
+
+pl_t plld_node_data( plld_node_t node )
+{
+    if ( node ) {
+        return node->data;
+    } else {
+        return NULL;
+    }
+}
+
+
+plld_node_t plld_node_next( plld_node_t node )
+{
+    if ( node ) {
+        return node->next;
+    } else {
+        return NULL;
+    }
+}
+
+
+plld_node_t plld_node_prev( plld_node_t node )
+{
+    if ( node ) {
+        return node->prev;
+    } else {
+        return NULL;
+    }
+}
+
+
+pl_bool_t plld_node_at_start( plld_node_t node )
+{
+    if ( node && node->prev == NULL ) {
+        return pl_true;
+    } else {
+        return pl_false;
+    }
+}
+
+
+pl_bool_t plld_node_at_end( plld_node_t node )
+{
+    if ( node && node->next == NULL ) {
+        return pl_true;
+    } else {
+        return pl_false;
+    }
+}
+
+
+plbm_t plld_host( plld_t plld )
+{
+    return plld->host;
+}
+
+
+plld_node_t plld_head( plld_t plld )
+{
+    return plld->head;
+}
+
+
+plld_node_t plld_tail( plld_t plld )
+{
+    return plld->tail;
+}
+
+
+pl_size_t plld_size( plld_t plld )
+{
+    return plld->size;
 }

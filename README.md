@@ -462,7 +462,7 @@ members: `fun` and `env`. `pl_ui` is initialized with `pl_ui_init`.
 interface slave. The `env` is used as permanent context for
 communication. The `fun` method is declared as:
 
-    typedef pl_none ( *pl_ui_f )( pl_t env, pl_t argi, pl_t argo );
+    typedef pl_none ( *pl_ui_fn_t )( pl_t env, pl_t argi, pl_t argo );
 
 The master passes requests towards the slave through `argi` and
 receives responses through `argo`. The interface is used by
@@ -477,11 +477,32 @@ referenced by `argi`, contains typically an ID field as the first
 struct field (follow by the actual payload). The ID field can be used
 to identify the type of the provided content.
 
+The containers in Plinth are general purpose and they have to be
+flexible regarding the size of the objects that are stored into the
+containers. Plinth provides an Array Accessor (`plar`) for using
+objects of specific size in an array arrangement. The `plar` is taken
+into use with initialization:
+
+    plar = plar_init( data, step, size );
+
+where `data` is the array start address, `step` is the array element
+size in bytes, and `size` is the number of elements in the array. User
+may access the array by index, set element values, insert and remove
+slices, etc. `plar` is not directly connected to the container, and
+therefore user must ensure proper allocations when performing
+inserting with `plar`.
+
+Plinth provides a List Accessors (`plls` and `plld`) for singly-linked
+and doubly-linked lists over an `plbm` allocator. If the user wants to
+effectively use `plam` for storage, the `plbm` should be placed into
+the `plam` (`plbm_into_plam`). The supported operations include:
+movement, append, insert, remove, append-to-end, and a number of query
+operations of the list status and content.
+
+
 
 Function listing:
 
-* `pl_ui_init` : Initialize ui structure.
-* `pl_ui_do` : Use Universal Interface.
 * `pl_alloc_memory` : Allocate memory from heap (zeroed).
 * `pl_alloc_aligned` : Allocate memory from heap (zeroed) and aligned.
 * `pl_alloc_only` : Allocate memory from heap (non-zeroed).
@@ -506,6 +527,7 @@ Function listing:
 * `plam_get` : Get allocation from plam.
 * `plam_get_aligned` : Get allocation from plam with alignment.
 * `plam_put` : Put allocation back to plam.
+* `plam_clear` : Clear all allocations in plam.
 * `plam_store` : Get allocation from plam and store the data.
 * `plam_store_ptr` : Get allocation from plam and store pointer value to it.
 * `plam_store_plsr` : Get allocation from plam and store the plsr content.
@@ -529,7 +551,9 @@ Function listing:
 * `plbm_del` : Delete plbm.
 * `plbm_get` : Get allocation from plbm.
 * `plbm_put` : Put allocation back to plbm.
-* `plbm_store` : Get allocation from plbm and store the data.
+* `plbm_clear` : Clear all allocations in plbm.
+* `plbm_store` : Get allocation from plbm and store the data with block size.
+* `plbm_store_with_size` : Get allocation from plbm and store the data with given size.
 * `plbm_store_ptr` : Allocate storage for pointer and store its value.
 * `plbm_ref_ptr` : Reference pointer value from the given storage address.
 * `plbm_node_size` : Return node size.
@@ -616,7 +640,54 @@ Function listing:
 * `plsr_is_empty` : Is plsr an empty string?
 * `plsr_next_line` : Return next line content, without the terminating newline.
 * `plsr_index` : Return indeced char.
-
+* `pl_ui_init` : Initialize ui structure.
+* `pl_ui_do` : Use Universal Interface.
+* `plar_init` : Initialize array for the data and dimensions.
+* `plar_get` : Return item from array.
+* `plar_set` : Set values of item(s).
+* `plar_insert` : Insert values to array.
+* `plar_remove` : Remove slice from array.
+* `plar_size_of_range` : Return the byte size of item range.
+* `plar_size_of_slice` : Return the byte size of item slice.
+* `plar_data` : Return array data.
+* `plar_step` : Return array item size.
+* `plar_size` : Return array item count.
+* `plls_init` : Initialize list with plbm.
+* `plls_append` : Append after place.
+* `plls_append_with_size` : Append after place with size.
+* `plls_insert` : Insert at list start.
+* `plls_insert_with_size` : Insert at list start with size.
+* `plls_remove` : Remove next node from list.
+* `plls_remove_head` : Remove head node from list.
+* `plls_store` : Store data at end of list.
+* `plls_store_with_size` : Store data at end of list.
+* `plls_node_overhead` : Return plls node overhead.
+* `plls_node_data` : Return data from node.
+* `plls_node_next` : Return next node.
+* `plls_node_at_start` : Is node at start of list?
+* `plls_node_at_end` : Is node at end of list?
+* `plls_host` : Return list host (plbm).
+* `plls_head` : Return list head (node).
+* `plls_tail` : Return list tail (node).
+* `plls_size` : Return node count of list.
+* `plld_init` : Initialize list with plbm.
+* `plld_append` : Append after place.
+* `plld_append_with_size` : Append after place with size.
+* `plld_insert` : Insert at place.
+* `plld_insert_with_size` : Insert at place with size.
+* `plld_remove` : Remove node from list.
+* `plld_store` : Store data at end of list.
+* `plld_store_with_size` : Store data at end of list.
+* `plld_node_overhead` : Return plld node overhead.
+* `plld_node_data` : Return data from node.
+* `plld_node_next` : Return next node.
+* `plld_node_prev` : Return previous node.
+* `plld_node_at_start` : Is node at start of list?
+* `plld_node_at_end` : Is node at end of list?
+* `plld_host` : Return list host (plbm).
+* `plld_head` : Return list head (node).
+* `plld_tail` : Return list tail (node).
+* `plld_size` : Return node count of list.
 
 
 ## Plinth API documentation
