@@ -172,16 +172,16 @@ pl_enum( pl_aa ){ PL_AA_NONE = 0, PL_AA_SELF, PL_AA_HEAP, PL_AA_PLAM,
 
 
 /**
- * Arena Memory Allocator Descriptor.
+ * Allocation Node for plam and plbm.
  *
  *        pl_node_s
  *       / used mem
  *      / /         ,unused mem
  *     #+++- <-> #+---
- *     '---'     '---'
- *       \         \
- *        node      current node
- *        size
+ *      '--'     '---'
+ *        \        \
+ *         data     node size
+ *
  */
 pl_struct_type( pl_node );
 pl_struct_body( pl_node )
@@ -191,6 +191,20 @@ pl_struct_body( pl_node )
     pl_size_t used;      /**< Used count for data. */
     uint8_t   data[ 0 ]; /**< Data location. */
 };
+
+
+/**
+ * Arena Memory Allocator Descriptor.
+ *
+ *        pl_node_s
+ *       / used mem
+ *      / /         ,unused mem
+ *     #+++- <-> #+---
+ *               '---'
+ *                 \
+ *                  current node
+ *
+ */
 pl_struct( plam )
 {
     pl_node_t node;  /**< Current node. */
@@ -204,8 +218,8 @@ pl_struct( plam )
 /**
  * Block Memory Allocator Descriptor.
  *
- *        ..       .-.
- *        v|       | v
+ *        ..       .-.  pl_node_s
+ *        v|       | v /
  *     #++-- <-> #+-+-
  *        |^       ^ |
  *        o'-------|-'
@@ -2472,6 +2486,17 @@ plls_node_t plls_tail( plls_t plls );
 
 
 /**
+ * @brief Return node from list index.
+ *
+ * @param plls  Plls handle.
+ * @param index Node index.
+ *
+ * @return Node from index (or NULL);
+ */
+plls_node_t plls_index( plls_t plls, pl_size_t index );
+
+
+/**
  * @brief Return node count of list.
  *
  * @param plls Plls handle.
@@ -2666,6 +2691,17 @@ plld_node_t plld_head( plld_t plld );
  * @return List tail node.
  */
 plld_node_t plld_tail( plld_t plld );
+
+
+/**
+ * @brief Return node from list index.
+ *
+ * @param plld  Plld handle.
+ * @param index Node index.
+ *
+ * @return Node from index (or NULL);
+ */
+plld_node_t plld_index( plld_t plld, pl_size_t index );
 
 
 /**

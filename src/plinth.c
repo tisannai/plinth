@@ -2295,6 +2295,26 @@ plls_node_t plls_tail( plls_t plls )
 }
 
 
+plls_node_t plls_index( plls_t plls, pl_size_t index )
+{
+    plls_node_t node;
+    pl_size_t   i;
+
+    if ( index == 0 || !plls->head ) {
+        return plls->head;
+    }
+
+    node = plls->head;
+    i = 1;
+    while ( i < index && node->next ) {
+        node = node->next;
+        i++;
+    }
+
+    return node->next;
+}
+
+
 pl_size_t plls_size( plls_t plls )
 {
     return plls->size;
@@ -2567,6 +2587,26 @@ plld_node_t plld_head( plld_t plld )
 plld_node_t plld_tail( plld_t plld )
 {
     return plld->tail;
+}
+
+
+plld_node_t plld_index( plld_t plld, pl_size_t index )
+{
+    plld_node_t node;
+    pl_size_t   i;
+
+    if ( index == 0 || !plld->head ) {
+        return plld->head;
+    }
+
+    node = plld->head;
+    i = 1;
+    while ( i < index && node->next ) {
+        node = node->next;
+        i++;
+    }
+
+    return node->next;
 }
 
 

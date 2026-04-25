@@ -669,6 +669,7 @@ Function listing:
 * `plls_host` : Return list host (plbm).
 * `plls_head` : Return list head (node).
 * `plls_tail` : Return list tail (node).
+* `plls_index` : Return node from list index.
 * `plls_size` : Return node count of list.
 * `plld_init` : Initialize list with plbm.
 * `plld_append` : Append after place.
@@ -687,6 +688,7 @@ Function listing:
 * `plld_host` : Return list host (plbm).
 * `plld_head` : Return list head (node).
 * `plld_tail` : Return list tail (node).
+* `plld_index` : Return node from list index.
 * `plld_size` : Return node count of list.
 
 
