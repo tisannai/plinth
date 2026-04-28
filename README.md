@@ -690,6 +690,27 @@ Function listing:
 * `plld_tail` : Return list tail (node).
 * `plld_index` : Return node from list index.
 * `plld_size` : Return node count of list.
+* `pllu_init` : Initialize list with plbm.
+* `pllu_store` : Store data at end of list.
+* `pllu_node_overhead` : Return pllu node overhead.
+* `pllu_cursor_init` : Initialize pllu cursor.
+* `pllu_cursor_init_to_end` : Initialize pllu cursor to end.
+* `pllu_cursor_node` : Return node of cursor.
+* `pllu_cursor_data` : Return node data from cursor.
+* `pllu_cursor_used` : Return node byte count from cursor.
+* `pllu_cursor_next` : Step to next node.
+* `pllu_cursor_prev` : Step to previous node.
+* `pllu_cursor_data_step` : Return node data from cursor and advance node.
+* `pllu_cursor_item` : Return data from cursor position.
+* `pllu_cursor_next_item` : Step to next cursor position.
+* `pllu_cursor_prev_item` : Step to previous cursor position.
+* `pllu_cursor_item_step` : Return item from cursor and advance item.
+* `pllu_host` : Return list host (plbm).
+* `pllu_head` : Return list head (node).
+* `pllu_tail` : Return list tail (node).
+* `pllu_size` : Return node count of list.
+* `pllu_capa` : Return data capacity per node.
+
 
 
 ## Plinth API documentation

@@ -367,6 +367,34 @@ pl_struct( plld )
 };
 
 
+/**
+ * List (unrolled) of items.
+ *
+ */
+pl_struct_type( pllu_node );
+pl_struct_body( pllu_node )
+{
+    pllu_node_t prev;      /**< Previous node. */
+    pllu_node_t next;      /**< Next node. */
+    pl_size_t   used;      /**< Used byte count. */
+    uint8_t     data[ 0 ]; /**< Data location. */
+};
+pl_struct( pllu )
+{
+    plbm_t      host; /**< Host allocator. */
+    pllu_node_t head; /**< First node of list. */
+    pllu_node_t tail; /**< Last node of list. */
+    pl_size_t   size; /**< Total data size. */
+    pl_size_t   capa; /**< List node byte capacity. */
+};
+pl_struct( pllu_cursor )
+{
+    pllu_t      pllu; /**< Pllu. */
+    pllu_node_t node; /**< Node. */
+    pl_size_t   spot; /**< Data index. */
+};
+
+
 
 /* ------------------------------------------------------------
  * Access macros with type abstraction.
@@ -392,6 +420,8 @@ pl_struct( plld )
     plcm_set( ( plcm ), ( pos ), ( data ), sizeof( type ) )
 #define plcm_terminate_for_type( plcm, type ) plcm_terminate( ( plcm ), sizeof( type ) )
 #define plcm_used_for_type( plcm, type ) ( plcm_used( ( plcm ) ) / sizeof( type ) )
+
+#define pllu_store_for_type( pllu, type ) pllu_store( ( pllu ), sizeof( type ) )
 
 #define PLAM_NULL_INIT { NULL, 0, PL_AA_SELF, NULL }
 #define PLAM_NULL ( plam_s ) PLAM_NULL_INIT
@@ -2712,6 +2742,226 @@ plld_node_t plld_index( plld_t plld, pl_size_t index );
  * @return Node count.
  */
 pl_size_t plld_size( plld_t plld );
+
+
+
+/* ------------------------------------------------------------
+ * List (unrolled):
+ */
+
+/**
+ * @brief Initialize list with plbm.
+ *
+ * @param plbm Plbm handle.
+ * @param capa Data capasity per node.
+ *
+ * @return Pllu.
+ */
+pllu_s pllu_init( plbm_t plbm, pl_size_t capa );
+
+
+/**
+ * @brief Store data at end of list.
+ *
+ * @param pllu Pllu handle.
+ * @param data Data to store.
+ * @param size Data size.
+ *
+ * @return None.
+ */
+pl_none pllu_store( pllu_t pllu, const pl_t data, pl_size_t size );
+
+
+/**
+ * @brief Return pllu node overhead.
+ *
+ * @return Overhead in bytes.
+ */
+pl_size_t pllu_node_overhead( void );
+
+
+/**
+ * @brief Initialize pllu cursor.
+ *
+ * @param pllu Pllu handle.
+ *
+ * @return Cursor.
+ */
+
+pllu_cursor_s pllu_cursor_init( pllu_t pllu );
+
+
+/**
+ * @brief Initialize pllu cursor to end.
+ *
+ * @param pllu Pllu handle.
+ *
+ * @return Cursor.
+ */
+pllu_cursor_s pllu_cursor_init_to_end( pllu_t pllu );
+
+
+/**
+ * @brief Return node of cursor.
+ *
+ * @param cursor Cursor.
+ *
+ * @return Node.
+ */
+pllu_node_t pllu_cursor_node( pllu_cursor_t cursor );
+
+
+/**
+ * @brief Return node data from cursor.
+ *
+ * @param      cursor Cursor.
+ * @param[out] size   Data size.
+ *
+ * @return Data.
+ */
+pl_t pllu_cursor_data( pllu_cursor_t cursor, pl_size_p size );
+
+
+/**
+ * @brief Return node byte count from cursor.
+ *
+ * @param cursor Cursor.
+ *
+ * @return Byte count.
+ */
+pl_size_t pllu_cursor_used( pllu_cursor_t cursor );
+
+
+/**
+ * @brief Step to next node.
+ *
+ * NOTE: cursor:node goes to NULL, when last node end is passed.
+ *
+ * @param cursor Current cursor.
+ */
+pl_none pllu_cursor_next( pllu_cursor_t cursor );
+
+
+/**
+ * @brief Step to previous node.
+ *
+ * NOTE: cursor:node goes to NULL, when first node end is passed.
+ *
+ * @param cursor Current cursor.
+ */
+pl_none pllu_cursor_prev( pllu_cursor_t cursor );
+
+
+/**
+ * @brief Return node data from cursor and advance node.
+ *
+ * NOTE: cursor:node goes to NULL, when last node end is passed.
+ *
+ * @param      cursor Cursor.
+ * @param[out] size   Byte count.
+ *
+ * @return Data.
+ */
+pl_t pllu_cursor_data_step( pllu_cursor_t cursor, pl_size_p size );
+
+
+/**
+ * @brief Return data from cursor position.
+ *
+ * @param cursor Cursor.
+ *
+ * @return Data.
+ */
+pl_t pllu_cursor_item( pllu_cursor_t cursor );
+
+
+/**
+ * @brief Step to next cursor position.
+ *
+ * NOTE: cursor:node goes to NULL, when last node end is passed.
+ *
+ * @param cursor Current cursor.
+ * @param size   Item size;
+ *
+ * @return Next cursor (or null).
+ */
+pl_none pllu_cursor_next_item( pllu_cursor_t cursor, pl_size_t step );
+
+
+/**
+ * @brief Step to previous cursor position.
+ *
+ * NOTE: cursor:node goes to NULL, when first node end is passed.
+ *
+ * @param cursor Current cursor.
+ * @param size   Item size;
+ *
+ * @return Previous cursor (or null).
+ */
+pl_none pllu_cursor_prev_item( pllu_cursor_t cursor, pl_size_t step );
+
+
+/**
+ * @brief Return item from cursor and advance item.
+ *
+ * NOTE: cursor:node goes to NULL, when last node end is passed.
+ *
+ * @param cursor Cursor.
+ * @param size   Item size;
+ *
+ * @return Data.
+ */
+pl_t pllu_cursor_item_step( pllu_cursor_t cursor, pl_size_t step );
+
+
+/**
+ * @brief Return list host (plbm).
+ *
+ * @param pllu Pllu handle.
+ *
+ * @return Host.
+ */
+plbm_t pllu_host( pllu_t pllu );
+
+
+/**
+ * @brief Return list head (node).
+ *
+ * @param pllu Pllu handle.
+ *
+ * @return List head node.
+ */
+pllu_node_t pllu_head( pllu_t pllu );
+
+
+/**
+ * @brief Return list tail (node).
+ *
+ * @param pllu Pllu handle.
+ *
+ * @return List tail node.
+ */
+pllu_node_t pllu_tail( pllu_t pllu );
+
+
+/**
+ * @brief Return node count of list.
+ *
+ * @param pllu Pllu handle.
+ *
+ * @return Node count.
+ */
+pl_size_t pllu_size( pllu_t pllu );
+
+
+/**
+ * @brief Return data capacity per node.
+ *
+ * @param pllu Pllu handle.
+ *
+ * @return Data capacity.
+ */
+pl_size_t pllu_capa( pllu_t pllu );
 
 
 #endif

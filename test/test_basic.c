@@ -1186,6 +1186,8 @@ void test_plls( void )
     TEST_ASSERT_EQUAL( pl_false, plls_node_at_start( NULL, &plls ) );
     TEST_ASSERT_EQUAL( pl_false, plls_node_at_end( NULL ) );
     TEST_ASSERT_EQUAL( &plbm, plls_host( &plls ) );
+
+    plbm_del( &plbm );
 }
 
 
@@ -1294,4 +1296,100 @@ void test_plld( void )
     node = plld_head( &plld );
     TEST_ASSERT( plld_node_at_start( node ) );
     TEST_ASSERT( strcmp( ss[ 0 ], plld_node_data( node ) ) == 0 );
+
+    plbm_del( &plbm );
+}
+
+
+void test_pllu( void )
+{
+    char*         ss[ 5 ];
+    plbm_s        plbm;
+    pllu_s        pllu;
+    pllu_cursor_s cursor;
+    pl_size_t     item;
+    pl_size_t     capa;
+    pl_size_t     node_size;
+    int           i;
+
+    item = sizeof( char* );
+    capa = 2 * item;
+    node_size = capa + pllu_node_overhead();
+    ss[ 0 ] = "text0";
+    ss[ 1 ] = "text1";
+    ss[ 2 ] = "text2";
+    ss[ 3 ] = "text3";
+    ss[ 4 ] = "text4";
+
+    plbm_new( &plbm, 128 * node_size, node_size );
+    pllu = pllu_init( &plbm, capa );
+
+    i = 0;
+    while ( i < 5 ) {
+        pllu_store( &pllu, ss[ i ], item );
+        i++;
+    }
+
+    i = 0;
+    cursor = pllu_cursor_init( &pllu );
+    while ( pllu_cursor_node( &cursor ) ) {
+        TEST_ASSERT( strcmp( ss[ i ], pllu_cursor_item_step( &cursor, item ) ) == 0 );
+        i++;
+    }
+
+    i = 0;
+    cursor = pllu_cursor_init( &pllu );
+    while ( i < 2 ) {
+        TEST_ASSERT( strcmp( ss[ i ], pllu_cursor_item_step( &cursor, item ) ) == 0 );
+        i++;
+    }
+
+    TEST_ASSERT( strcmp( ss[ 2 ], pllu_cursor_item( &cursor ) ) == 0 );
+    pllu_cursor_prev_item( &cursor, item );
+    TEST_ASSERT( strcmp( ss[ 1 ], pllu_cursor_item( &cursor ) ) == 0 );
+    pllu_cursor_prev_item( &cursor, item );
+    TEST_ASSERT( strcmp( ss[ 0 ], pllu_cursor_item( &cursor ) ) == 0 );
+    pllu_cursor_prev_item( &cursor, item );
+    TEST_ASSERT_EQUAL( NULL, pllu_cursor_node( &cursor ) );
+
+
+    cursor = pllu_cursor_init( &pllu );
+
+    pllu_cursor_data_step( &cursor, &node_size );
+    TEST_ASSERT_EQUAL( capa, node_size );
+    pllu_cursor_data_step( &cursor, &node_size );
+    TEST_ASSERT_EQUAL( capa, node_size );
+    pllu_cursor_data( &cursor, &node_size );
+    TEST_ASSERT_EQUAL( item, node_size );
+
+    pllu_cursor_prev( &cursor );
+    pllu_cursor_data( &cursor, &node_size );
+    TEST_ASSERT_EQUAL( capa, node_size );
+    pllu_cursor_prev( &cursor );
+    pllu_cursor_data( &cursor, &node_size );
+    TEST_ASSERT_EQUAL( capa, node_size );
+
+    TEST_ASSERT_EQUAL( &plbm, pllu_host( &pllu ) );
+
+    cursor = pllu_cursor_init( &pllu );
+    TEST_ASSERT_EQUAL( pllu_cursor_node( &cursor ), pllu_head( &pllu ) );
+    TEST_ASSERT_EQUAL( capa, pllu_cursor_used( &cursor ) );
+    pllu_cursor_next( &cursor );
+    pllu_cursor_next( &cursor );
+    TEST_ASSERT_EQUAL( pllu_cursor_node( &cursor ), pllu_tail( &pllu ) );
+
+    TEST_ASSERT_EQUAL( 5 * item, pllu_size( &pllu ) );
+    TEST_ASSERT_EQUAL( capa, pllu_capa( &pllu ) );
+
+    cursor = pllu_cursor_init_to_end( &pllu );
+    pllu_cursor_prev_item( &cursor, item );
+    TEST_ASSERT( strcmp( ss[ 4 ], pllu_cursor_item( &cursor ) ) == 0 );
+
+    pllu_store( &pllu, ss, 3 * item );
+    TEST_ASSERT_EQUAL( 8 * item, pllu_size( &pllu ) );
+    cursor = pllu_cursor_init_to_end( &pllu );
+    pllu_cursor_prev_item( &cursor, item );
+    TEST_ASSERT( strcmp( ss[ 2 ], *(char**)pllu_cursor_item( &cursor ) ) == 0 );
+
+    plbm_del( &plbm );
 }

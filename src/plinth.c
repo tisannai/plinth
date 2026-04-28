@@ -2614,3 +2614,203 @@ pl_size_t plld_size( plld_t plld )
 {
     return plld->size;
 }
+
+
+
+/* ------------------------------------------------------------
+ * List (unrolled):
+ */
+
+pllu_s pllu_init( plbm_t plbm, pl_size_t capa )
+{
+    return (pllu_s){ plbm, NULL, NULL, 0, capa };
+}
+
+
+pl_none pllu_store( pllu_t pllu, const pl_t data, pl_size_t size )
+{
+    pllu_node_t node;
+    pl_size_t   done;
+    pl_size_t   left;
+    pl_size_t   blop;
+    pl_size_t   tail;
+
+    done = 0;
+    left = size;
+
+    while ( done < size ) {
+
+        /* Allocate a node if no nodes, or if the current is full. */
+
+        if ( !pllu->head ) {
+
+            node = plbm_get( pllu->host );
+            node->prev = NULL;
+            node->next = NULL;
+            node->used = 0;
+            pllu->head = node;
+            pllu->tail = node;
+
+        } else if ( pllu->tail->used >= pllu->capa ) {
+
+            node = plbm_get( pllu->host );
+            node->prev = pllu->tail;
+            node->next = NULL;
+            node->used = 0;
+            pllu->tail->next = node;
+            pllu->tail = node;
+
+        } else {
+
+            node = pllu->tail;
+        }
+
+        tail = pllu->capa - node->used;
+        if ( left > tail ) {
+            blop = tail;
+        } else {
+            blop = left;
+        }
+
+        memcpy( node->data + node->used, data + done, blop );
+        node->used += blop;
+        pllu->size += blop;
+        done += blop;
+        left -= blop;
+    }
+}
+
+
+pl_size_t pllu_node_overhead( void )
+{
+    return sizeof( pllu_node_s );
+}
+
+
+pllu_cursor_s pllu_cursor_init( pllu_t pllu )
+{
+    return (pllu_cursor_s){ pllu, pllu->head, 0 };
+}
+
+
+pllu_cursor_s pllu_cursor_init_to_end( pllu_t pllu )
+{
+    return (pllu_cursor_s){ pllu, pllu->tail, pllu->tail->used };
+}
+
+
+pllu_node_t pllu_cursor_node( pllu_cursor_t cursor )
+{
+    return cursor->node;
+}
+
+
+pl_t pllu_cursor_data( pllu_cursor_t cursor, pl_size_p size )
+{
+    *size = cursor->node->used;
+    return cursor->node->data;
+}
+
+
+pl_size_t pllu_cursor_used( pllu_cursor_t cursor )
+{
+    return cursor->node->used;
+}
+
+
+pl_none pllu_cursor_next( pllu_cursor_t cursor )
+{
+    cursor->node = cursor->node->next;
+}
+
+
+pl_none pllu_cursor_prev( pllu_cursor_t cursor )
+{
+    cursor->node = cursor->node->prev;
+}
+
+
+pl_t pllu_cursor_data_step( pllu_cursor_t cursor, pl_size_p size )
+{
+    pl_t ret;
+    ret = pllu_cursor_data( cursor, size );
+    pllu_cursor_next( cursor );
+    return ret;
+}
+
+
+pl_t pllu_cursor_item( pllu_cursor_t cursor )
+{
+    return cursor->node->data + cursor->spot;
+}
+
+
+pl_none pllu_cursor_next_item( pllu_cursor_t cursor, pl_size_t step )
+{
+    pl_size_t tail;
+
+    tail = cursor->node->used - cursor->spot;
+    if ( step < tail ) {
+        cursor->spot += step;
+    } else if ( cursor->node->next ) {
+        tail = step - tail;
+        cursor->node = cursor->node->next;
+        cursor->spot = tail;
+    } else {
+        cursor->node = NULL;
+    }
+}
+
+
+pl_none pllu_cursor_prev_item( pllu_cursor_t cursor, pl_size_t step )
+{
+    if ( cursor->spot >= step ) {
+        cursor->spot -= step;
+    } else if ( cursor->node->prev ) {
+        pl_size_t tail;
+        tail = step - cursor->spot;
+        cursor->node = cursor->node->prev;
+        cursor->spot = cursor->node->used - tail;
+    } else {
+        cursor->node = NULL;
+    }
+}
+
+
+pl_t pllu_cursor_item_step( pllu_cursor_t cursor, pl_size_t step )
+{
+    pl_t ret;
+    ret = pllu_cursor_item( cursor );
+    pllu_cursor_next_item( cursor, step );
+    return ret;
+}
+
+
+plbm_t pllu_host( pllu_t pllu )
+{
+    return pllu->host;
+}
+
+
+pllu_node_t pllu_head( pllu_t pllu )
+{
+    return pllu->head;
+}
+
+
+pllu_node_t pllu_tail( pllu_t pllu )
+{
+    return pllu->tail;
+}
+
+
+pl_size_t pllu_size( pllu_t pllu )
+{
+    return pllu->size;
+}
+
+
+pl_size_t pllu_capa( pllu_t pllu )
+{
+    return pllu->capa;
+}
