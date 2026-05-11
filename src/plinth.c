@@ -1027,7 +1027,7 @@ pl_none plcm_resize( plcm_t plcm, pl_size_t size )
 
             pl_t new_mem;
 
-            if ( size > plcm->size * 2 ) {
+            if ( size > 2 * plcm->size ) {
                 new_size = PLINTH_ALIGN_TO( size, plcm->size );
             } else {
                 new_size = 2 * plcm->size;
@@ -1053,7 +1053,7 @@ pl_none plcm_resize( plcm_t plcm, pl_size_t size )
               enough, we resize to the next sufficient multiple of
               plcm->size.
              */
-            if ( size > plcm->size * 2 ) {
+            if ( size > 2 * plcm->size ) {
                 new_size = PLINTH_ALIGN_TO( size, plcm->size );
             } else {
                 new_size = 2 * plcm->size;

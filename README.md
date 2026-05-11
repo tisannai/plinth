@@ -492,13 +492,24 @@ slices, etc. `plar` is not directly connected to the container, and
 therefore user must ensure proper allocations when performing
 inserting with `plar`.
 
-Plinth provides a List Accessors (`plls` and `plld`) for singly-linked
+Plinth provides List Accessors (`plls` and `plld`) for singly-linked
 and doubly-linked lists over an `plbm` allocator. If the user wants to
 effectively use `plam` for storage, the `plbm` should be placed into
 the `plam` (`plbm_into_plam`). The supported operations include:
 movement, append, insert, remove, append-to-end, and a number of query
 operations of the list status and content.
 
+The most efficient way of storing a collection, with unknown size, is
+to use an unrolled list (`pllu`). The items are stored in consecutive
+memory locations until the block runs out of space. Then the next
+block is taken into use, and another stretch of continuous locations
+are used. When all items are in the collection and the total size is
+known, the final and continuous, storage location for the items can be
+created. `pllu` is initialized over an `plbm`. Items are added with
+`pllu_store`. `pllu_cursor` is provided to access the storage in an
+uniform and simple way. Each block is a node in a doubly-linked list
+of nodes. `pllu_cursor` jumps from one block to another, when
+necessary.
 
 
 Function listing:
