@@ -1023,13 +1023,13 @@ static pl_none ui_echo( pl_t env, pl_t argi, pl_t argo )
 
 void test_ui( void )
 {
-    pl_ui_s ui;
+    plui_s ui;
     char*   msg_out;
     char*   msg_in;
 
-    pl_ui_init( &ui, NULL, ui_echo );
+    plui_init( &ui, NULL, ui_echo );
     msg_out = "hello";
-    pl_ui_do( &ui, msg_out, &msg_in );
+    plui_do( &ui, msg_out, &msg_in );
     TEST_ASSERT( strcmp( msg_out, msg_in ) == 0 );
 }
 

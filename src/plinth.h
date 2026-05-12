@@ -303,16 +303,16 @@ pl_struct( plsr )
  *     argo:   Output from method.
  *
  */
-pl_fn_type( pl_ui, pl_none, pl_t env, pl_t argi, pl_t argo );
+pl_fn_type( plui, pl_none, pl_t env, pl_t argi, pl_t argo );
 
 
 /**
  * Universal Interface.
  */
-pl_struct( pl_ui )
+pl_struct( plui )
 {
-    pl_t       env; /**< Environment. */
-    pl_ui_fn_t fun; /**< Method. */
+    pl_t      env; /**< Environment. */
+    plui_fn_t fun; /**< Method. */
 };
 
 
@@ -2188,7 +2188,7 @@ char plsr_index( plsr_s plsr, pl_pos_t index );
  * @param env Environment for UI.
  * @param fun Method for UI.
  */
-pl_none pl_ui_init( pl_ui_t ui, pl_t env, pl_ui_fn_t fun );
+pl_none plui_init( plui_t ui, pl_t env, plui_fn_t fun );
 
 
 /**
@@ -2198,7 +2198,7 @@ pl_none pl_ui_init( pl_ui_t ui, pl_t env, pl_ui_fn_t fun );
  * @param argi Input argument, opaque pointer.
  * @param argo Output argument (response), opaque pointer.
  */
-pl_none pl_ui_do( pl_ui_t ui, pl_t argi, pl_t argo );
+pl_none plui_do( plui_t ui, pl_t argi, pl_t argo );
 
 
 

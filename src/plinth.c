@@ -1931,14 +1931,14 @@ char plsr_index( plsr_s plsr, pl_pos_t index )
  * Universal Interface:
  */
 
-pl_none pl_ui_init( pl_ui_t ui, pl_t env, pl_ui_fn_t fun )
+pl_none plui_init( plui_t ui, pl_t env, plui_fn_t fun )
 {
     ui->env = env;
     ui->fun = fun;
 }
 
 
-pl_none pl_ui_do( pl_ui_t ui, pl_t argi, pl_t argo )
+pl_none plui_do( plui_t ui, pl_t argi, pl_t argo )
 {
     ui->fun( ui->env, argi, argo );
 }

@@ -456,19 +456,19 @@ Apart from type definitions, Plinth defines an Universal Interface. It
 is universal in the sense, that it can be used in any context,
 technically. Universal Interface is useful in situations where we have
 to commit to a mechanism, but we don't have much use cases available.
-The interface is captured as struct called `pl_ui`, which includes two
-members: `fun` and `env`. `pl_ui` is initialized with `pl_ui_init`.
+The interface is captured as struct called `plui`, which includes two
+members: `fun` and `env`. `plui` is initialized with `plui_init`.
 `fun` is called by the interface master to communicate with the
 interface slave. The `env` is used as permanent context for
 communication. The `fun` method is declared as:
 
-    typedef pl_none ( *pl_ui_fn_t )( pl_t env, pl_t argi, pl_t argo );
+    typedef pl_none ( *plui_fn_t )( pl_t env, pl_t argi, pl_t argo );
 
 The master passes requests towards the slave through `argi` and
 receives responses through `argo`. The interface is used by
 performing:
 
-    pl_ui_do( ui, argi, argo );
+    plui_do( ui, argi, argo );
 
 from the master side. While the interface is universal, the
 communicating parties are, obviously, required to agree on the
@@ -651,8 +651,8 @@ Function listing:
 * `plsr_is_empty` : Is plsr an empty string?
 * `plsr_next_line` : Return next line content, without the terminating newline.
 * `plsr_index` : Return indeced char.
-* `pl_ui_init` : Initialize ui structure.
-* `pl_ui_do` : Use Universal Interface.
+* `plui_init` : Initialize ui structure.
+* `plui_do` : Use Universal Interface.
 * `plar_init` : Initialize array for the data and dimensions.
 * `plar_get` : Return item from array.
 * `plar_set` : Set values of item(s).
