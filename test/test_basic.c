@@ -1011,6 +1011,35 @@ line5\n\
     }
     line = plsr_next_line( text, &offset );
     TEST_ASSERT_EQUAL( pl_true, plsr_is_null( line ) );
+
+
+    FILE* fh;
+
+    plss_write_file( plss_from_plsr( &wr_text, plsr_from_string( "line1\nline2.." ) ),
+                     "test/test_file1.txt" );
+    fh = fopen( "test/test_file1.txt", "r" );
+    plcm_new( &rd_text, 7 );
+    plss_read_line( &rd_text, fh );
+    TEST_ASSERT_EQUAL( pl_true,
+                       plsr_compare( plsr_from_string( "line1" ), plsr_from_plcm( &rd_text ) ) );
+    plss_read_line( &rd_text, fh );
+    TEST_ASSERT_EQUAL( pl_true,
+                       plsr_compare( plsr_from_string( "line2.." ), plsr_from_plcm( &rd_text ) ) );
+    fclose( fh );
+
+    fh = fopen( "test/test_file1.txt", "w" );
+    plss_write_to( plsr_from_plcm( &rd_text ), fh );
+    plss_write_to( plsr_from_string( "\n" ), fh );
+    fclose( fh );
+
+    fh = fopen( "test/test_file1.txt", "r" );
+    plss_read_line( &rd_text, fh );
+    TEST_ASSERT_EQUAL( pl_true,
+                       plsr_compare( plsr_from_string( "line2" ),
+                                     plsr_range( plsr_from_plcm( &rd_text ), 0, 5 ) ) );
+    fclose( fh );
+
+    plcm_del( &rd_text );
 }
 
 
@@ -1024,8 +1053,8 @@ static pl_none ui_echo( pl_t env, pl_t argi, pl_t argo )
 void test_ui( void )
 {
     plui_s ui;
-    char*   msg_out;
-    char*   msg_in;
+    char*  msg_out;
+    char*  msg_in;
 
     plui_init( &ui, NULL, ui_echo );
     msg_out = "hello";

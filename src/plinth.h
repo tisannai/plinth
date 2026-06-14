@@ -12,6 +12,7 @@
  */
 
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdarg.h>
@@ -1959,8 +1960,8 @@ pl_none plss_va_format_string( plcm_t plcm, const char* fmt, va_list ap );
 
 
 /**
- * Read file into an existing plcm and return plcm for file
- * content.
+ * @brief Read file into an existing plcm and return plcm for file
+ *        content.
  *
  * @param plcm     Plcm handle.
  * @param filename Filename.
@@ -1971,8 +1972,8 @@ plcm_t plss_read_file( plcm_t plcm, const char* filename );
 
 
 /**
- * Read file into an existing plcm and return plcm for file content
- * with null padding in the start and end.
+ * @brief Read file into an existing plcm and return plcm for file
+ *        content with null padding in the start and end.
  *
  * @param plcm     Plcm handle.
  * @param filename Filename.
@@ -1988,7 +1989,31 @@ plcm_t plss_read_file_with_pad( plcm_t      plcm,
 
 
 /**
- * Write plcm content to file.
+ * @brief Read a line from file stream to an existing plcm, with the
+ *        possible newline at the end of line.
+ *
+ * @param plcm     Plcm handle.
+ * @param fh       File stream.
+ *
+ * @return plcm, NULL with failure.
+ */
+plcm_t plss_read_line_with_newline( plcm_t plcm, FILE* fh );
+
+
+/**
+ * @brief Read a line (no newline) from file stream to an existing
+ *        plcm.
+ *
+ * @param plcm     Plcm handle.
+ * @param fh       File stream.
+ *
+ * @return plcm, NULL with failure.
+ */
+plcm_t plss_read_line( plcm_t plcm, FILE* fh );
+
+
+/**
+ * @brief Write plcm content to file.
  *
  * @param plcm     Plcm handle.
  * @param filename Filename.
@@ -1996,6 +2021,17 @@ plcm_t plss_read_file_with_pad( plcm_t      plcm,
  * @return plcm, NULL for failure.
  */
 plcm_t plss_write_file( plcm_t plcm, const char* filename );
+
+
+/**
+ * @brief Write plsr content to file stream.
+ *
+ * @param plsr Plsr handle.
+ * @param fh   File stream.
+ *
+ * @return Number of bytes written.
+ */
+pl_size_t plss_write_to( plsr_s plsr, FILE* fh );
 
 
 /**
@@ -2152,7 +2188,8 @@ pl_bool_t plsr_is_empty( plsr_s plsr );
  *
  * The next line is a string reference starting from current offset to
  * the newline or eof. Offset is updated to be after next newline or
- * at eof, if eof was encountered.
+ * at eof, if eof was encountered. First line is returned by passing
+ * offset with initial value 0.
  *
  * @param         plsr   Plsr handle.
  * @param[in,out] offset Current offset.
@@ -2163,7 +2200,7 @@ plsr_s plsr_next_line( plsr_s plsr, pl_size_p offset );
 
 
 /**
- * @brief Return indeced char.
+ * @brief Return char at index.
  *
  * Note: return 0, if index is out-of-range.
  *
@@ -2173,6 +2210,18 @@ plsr_s plsr_next_line( plsr_s plsr, pl_size_p offset );
  * @return Indexed char.
  */
 char plsr_index( plsr_s plsr, pl_pos_t index );
+
+
+/**
+ * @brief Return range of plsr.
+ *
+ * @param plsr  Plsr handle.
+ * @param start Start index (inclusive).
+ * @param end   End index (exclusive).
+ *
+ * @return Plsr.
+ */
+plsr_s plsr_range( plsr_s plsr, pl_size_t start, pl_size_t end );
 
 
 
@@ -2332,7 +2381,7 @@ pl_size_t plar_size( plar_s plar );
  */
 
 /**
- * @brief Initialize list with plbm.
+ * @brief Initialize list to plbm.
  *
  * @param plbm Plbm handle.
  *
@@ -2542,7 +2591,7 @@ pl_size_t plls_size( plls_t plls );
  */
 
 /**
- * @brief Initialize list with plbm.
+ * @brief Initialize list to plbm.
  *
  * @param plbm Plbm handle.
  *
@@ -2750,7 +2799,7 @@ pl_size_t plld_size( plld_t plld );
  */
 
 /**
- * @brief Initialize list with plbm.
+ * @brief Initialize list to plbm.
  *
  * @param plbm Plbm handle.
  * @param capa Data capasity per node.

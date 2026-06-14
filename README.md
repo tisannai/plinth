@@ -635,6 +635,12 @@ Function listing:
 * `plss_format_string` : Format string to plcm, append.
 * `plss_reformat_string` : Format string to plcm, overwrite.
 * `plss_va_format_string` : Format string to plcm, append.
+* `plss_read_file` : Read file into an existing plcm.
+* `plss_read_file_with_pad` : Read file into an existing plcm with padding.
+* `plss_read_line_with_newline` : Read full line from file stream.
+* `plss_read_line` : Read line (no newline) from file stream.
+* `plss_write_file` : Write plcm content to file.
+* `plss_write_to` : Write plsr content to file stream.
 * `plss_string` : String in plcm.
 * `plss_length` : String length in plcm.
 * `plss_ref` : String in plcm.
@@ -650,7 +656,8 @@ Function listing:
 * `plsr_is_null` : Is plsr null?
 * `plsr_is_empty` : Is plsr an empty string?
 * `plsr_next_line` : Return next line content, without the terminating newline.
-* `plsr_index` : Return indeced char.
+* `plsr_index` : Return char at index.
+* `plsr_range` : Return range of plsr.
 * `plui_init` : Initialize ui structure.
 * `plui_do` : Use Universal Interface.
 * `plar_init` : Initialize array for the data and dimensions.
@@ -663,7 +670,7 @@ Function listing:
 * `plar_data` : Return array data.
 * `plar_step` : Return array item size.
 * `plar_size` : Return array item count.
-* `plls_init` : Initialize list with plbm.
+* `plls_init` : Initialize list to plbm.
 * `plls_append` : Append after place.
 * `plls_append_with_size` : Append after place with size.
 * `plls_insert` : Insert at list start.
@@ -682,7 +689,7 @@ Function listing:
 * `plls_tail` : Return list tail (node).
 * `plls_index` : Return node from list index.
 * `plls_size` : Return node count of list.
-* `plld_init` : Initialize list with plbm.
+* `plld_init` : Initialize list to plbm.
 * `plld_append` : Append after place.
 * `plld_append_with_size` : Append after place with size.
 * `plld_insert` : Insert at place.
@@ -701,7 +708,7 @@ Function listing:
 * `plld_tail` : Return list tail (node).
 * `plld_index` : Return node from list index.
 * `plld_size` : Return node count of list.
-* `pllu_init` : Initialize list with plbm.
+* `pllu_init` : Initialize list to plbm.
 * `pllu_store` : Store data at end of list.
 * `pllu_node_overhead` : Return pllu node overhead.
 * `pllu_cursor_init` : Initialize pllu cursor.

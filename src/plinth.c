@@ -1732,6 +1732,62 @@ plcm_t plss_read_file_with_pad( plcm_t plcm, const char* filename, pl_size_t lef
 }
 
 
+plcm_t plss_read_line_with_newline( plcm_t plcm, FILE* fh )
+{
+    pl_size_t count;
+    pl_size_t size;
+    char*     str;
+    int       ch;
+
+    count = 0;
+    size = plcm_size( plcm );
+    str = (char*)plcm_data( plcm );
+    plcm_reset( plcm );
+
+    while ( 1 ) {
+        ch = fgetc( fh );
+        if ( ch == EOF ) {
+            break;
+        } else {
+            if ( ( count + 1 ) >= size ) {
+                size *= 2;
+                plcm_resize( plcm, size );
+            }
+            str[ count++ ] = (char)ch;
+            if ( ch == '\n' ) {
+                break;
+            }
+        }
+    }
+
+    if ( ( count + 1 ) >= size ) {
+        plcm_resize( plcm, size + 1 );
+    }
+
+    str[ count ] = 0;
+    plcm_consume( plcm, count );
+
+    return plcm;
+}
+
+
+plcm_t plss_read_line( plcm_t plcm, FILE* fh )
+{
+    pl_size_t len;
+    char*     str;
+
+    plss_read_line_with_newline( plcm, fh );
+    len = plcm_used( plcm );
+    str = plcm_data( plcm );
+    if ( str[ len - 1 ] == '\n' ) {
+        str[ len - 1 ] = 0;
+        plcm_pop( plcm, 1 );
+    }
+
+    return plcm;
+}
+
+
 plcm_t plss_write_file( plcm_t plcm, const char* filename )
 {
     int fd;
@@ -1751,6 +1807,12 @@ plcm_t plss_write_file( plcm_t plcm, const char* filename )
     }
 
     return plcm;
+}
+
+
+pl_size_t plss_write_to( plsr_s plsr, FILE* fh )
+{
+    return (pl_size_t)fwrite( plsr_string( plsr ), 1, plsr_length( plsr ), fh );
 }
 
 
@@ -1923,6 +1985,15 @@ char plsr_index( plsr_s plsr, pl_pos_t index )
     } else {
         return 0;
     }
+}
+
+
+plsr_s plsr_range( plsr_s plsr, pl_size_t start, pl_size_t end )
+{
+    plsr_s ret;
+    ret.length = end - start;
+    ret.string = &plsr.string[ start ];
+    return ret;
 }
 
 
