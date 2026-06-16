@@ -1038,7 +1038,20 @@ line5\n\
                        plsr_compare( plsr_from_string( "line2" ),
                                      plsr_range( plsr_from_plcm( &rd_text ), 0, 5 ) ) );
     fclose( fh );
+    plcm_del( &rd_text );
 
+    plss_write_file( plss_from_plsr( &wr_text, plsr_from_string( "line1\nline2\n" ) ),
+                     "test/test_file1.txt" );
+    fh = fopen( "test/test_file1.txt", "r" );
+    plcm_new( &rd_text, 6 );
+    plss_read_line( &rd_text, fh );
+    TEST_ASSERT_EQUAL( pl_true,
+                       plsr_compare( plsr_from_string( "line1" ), plsr_from_plcm( &rd_text ) ) );
+    plss_read_line( &rd_text, fh );
+    TEST_ASSERT_EQUAL( pl_true,
+                       plsr_compare( plsr_from_string( "line2" ), plsr_from_plcm( &rd_text ) ) );
+    TEST_ASSERT( plss_read_line( &rd_text, fh ) == NULL );
+    fclose( fh );
     plcm_del( &rd_text );
 }
 

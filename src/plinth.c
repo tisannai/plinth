@@ -1747,7 +1747,11 @@ plcm_t plss_read_line_with_newline( plcm_t plcm, FILE* fh )
     while ( 1 ) {
         ch = fgetc( fh );
         if ( ch == EOF ) {
-            break;
+            if ( count == 0 ) {
+                return NULL;
+            } else {
+                break;
+            }
         } else {
             if ( ( count + 1 ) >= size ) {
                 size *= 2;
@@ -1776,7 +1780,9 @@ plcm_t plss_read_line( plcm_t plcm, FILE* fh )
     pl_size_t len;
     char*     str;
 
-    plss_read_line_with_newline( plcm, fh );
+    if ( plss_read_line_with_newline( plcm, fh ) == NULL ) {
+        return NULL;
+    }
     len = plcm_used( plcm );
     str = plcm_data( plcm );
     if ( str[ len - 1 ] == '\n' ) {
