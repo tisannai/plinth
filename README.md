@@ -499,6 +499,13 @@ the `plam` (`plbm_into_plam`). The supported operations include:
 movement, append, insert, remove, append-to-end, and a number of query
 operations of the list status and content.
 
+Places (locations) in `plls` are handled with a pointer-to-pointer.
+This allows inserting new list items before the current item. Without
+a pointer-to-pointer, it would not be possible to update the list
+linking to the previous node at insertion. In `plld` the place is just
+a pointer to the item, since `plld` can be traveled in both
+directions.
+
 The most efficient way of storing a collection, with unknown size, is
 to use an unrolled list (`pllu`). The items are stored in consecutive
 memory locations until the block runs out of space. Then the next
@@ -676,9 +683,10 @@ Function listing:
 * `plls_insert` : Insert at list start.
 * `plls_insert_with_size` : Insert at list start with size.
 * `plls_remove` : Remove next node from list.
-* `plls_remove_head` : Remove head node from list.
 * `plls_store` : Store data at end of list.
 * `plls_store_with_size` : Store data at end of list.
+* `plls_push` : Push data to front of list.
+* `plls_pop` : Pop data from front of list.
 * `plls_node_overhead` : Return plls node overhead.
 * `plls_node_data` : Return data from node.
 * `plls_node_next` : Return next node.

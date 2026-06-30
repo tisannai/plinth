@@ -2399,7 +2399,7 @@ plls_s plls_init( plbm_t plbm );
  *
  * @return None.
  */
-pl_none plls_append( plls_t plls, plls_node_t place, const pl_t data );
+pl_none plls_append( plls_t plls, plls_node_p place, const pl_t data );
 
 
 /**
@@ -2412,54 +2412,46 @@ pl_none plls_append( plls_t plls, plls_node_t place, const pl_t data );
  *
  * @return None.
  */
-pl_none plls_append_with_size( plls_t plls, plls_node_t place, const pl_t data, pl_size_t size );
+pl_none plls_append_with_size( plls_t plls, plls_node_p place, const pl_t data, pl_size_t size );
 
 
 /**
- * @brief Insert at list start.
+ * @brief Insert at place.
  *
  * @param plls  Plls handle.
+ * @param place Place of insert.
  * @param data  Data to insert.
  *
  * @return None.
  */
-pl_none plls_insert( plls_t plls, const pl_t data );
+pl_none plls_insert( plls_t plls, plls_node_p place, const pl_t data );
 
 
 /**
- * @brief Insert at list start with size.
+ * @brief Insert at place with size.
  *
  * @param plls  Plls handle.
+ * @param place Place of insert.
  * @param data  Data to insert.
  * @param size  Size of data.
  *
  * @return None.
  */
-pl_none plls_insert_with_size( plls_t plls, const pl_t data, pl_size_t size );
+pl_none plls_insert_with_size( plls_t plls, plls_node_p place, const pl_t data, pl_size_t size );
 
 
 /**
- * @brief Remove next node from list.
+ * @brief Remove node from list.
  *
- * Current node is removed if at list start and the node is the only
- * remaining.
+ * Current node is removed, if place is at list start and the node is
+ * the only remaining.
  *
  * @param plls  Plls handle.
  * @param place Place of removal.
  *
- * @return Current node (if possible).
+ * @return Pointer to current node (if possible).
  */
-plls_node_t plls_remove( plls_t plls, plls_node_t place );
-
-
-/**
- * @brief Remove head node from list.
- *
- * @param plls Plls handle.
- *
- * @return New head node (if any).
- */
-plls_node_t plls_remove_head( plls_t plls );
+plls_node_p plls_remove( plls_t plls, plls_node_p place );
 
 
 /**
@@ -2483,6 +2475,27 @@ pl_none plls_store( plls_t plls, const pl_t data );
  * @return None.
  */
 pl_none plls_store_with_size( plls_t plls, const pl_t data, pl_size_t size );
+
+
+/**
+ * @brief Push data to front of list.
+ *
+ * @param plls Plls handle.
+ * @param data Data to store.
+ *
+ * @return None.
+ */
+pl_none plls_push( plls_t plls, const pl_t data );
+
+
+/**
+ * @brief Pop data from front of list.
+ *
+ * @param plls Plls handle.
+ *
+ * @return Popped data.
+ */
+plls_node_t plls_pop( plls_t plls );
 
 
 /**
@@ -2510,7 +2523,7 @@ pl_t plls_node_data( plls_node_t node );
  *
  * @return Next node (or null).
  */
-plls_node_t plls_node_next( plls_node_t node );
+plls_node_p plls_node_next( plls_node_p node );
 
 
 /**
@@ -2528,10 +2541,11 @@ pl_bool_t plls_node_at_start( plls_node_t node, plls_t plls );
  * @brief Is node at end of list?
  *
  * @param node Node.
+ * @param plls Plls handle.
  *
  * @return True if at end.
  */
-pl_bool_t plls_node_at_end( plls_node_t node );
+pl_bool_t plls_node_at_end( plls_node_t node, plls_t plls );
 
 
 /**
@@ -2545,13 +2559,13 @@ plbm_t plls_host( plls_t plls );
 
 
 /**
- * @brief Return list head (node).
+ * @brief Return pointer to list head.
  *
  * @param plls Plls handle.
  *
- * @return List head node.
+ * @return Pointer to list head.
  */
-plls_node_t plls_head( plls_t plls );
+plls_node_p plls_head( plls_t plls );
 
 
 /**
@@ -2559,9 +2573,9 @@ plls_node_t plls_head( plls_t plls );
  *
  * @param plls Plls handle.
  *
- * @return List tail node.
+ * @return Pointer to list tail.
  */
-plls_node_t plls_tail( plls_t plls );
+plls_node_p plls_tail( plls_t plls );
 
 
 /**
@@ -2570,9 +2584,9 @@ plls_node_t plls_tail( plls_t plls );
  * @param plls  Plls handle.
  * @param index Node index.
  *
- * @return Node from index (or NULL);
+ * @return Pointer to node from index (or NULL);
  */
-plls_node_t plls_index( plls_t plls, pl_size_t index );
+plls_node_p plls_index( plls_t plls, pl_size_t index );
 
 
 /**
