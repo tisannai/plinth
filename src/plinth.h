@@ -297,6 +297,19 @@ pl_struct( plsr )
 
 
 /**
+ * Value range iterator.
+ *
+ */
+pl_struct( plit )
+{
+    pl_pos_t value; /**< Current value. */
+    pl_pos_t limit; /**< Limit value. */
+    pl_pos_t step;  /**< Step size and direction. */
+};
+
+
+
+/**
  * Universal Interface method (function type).
  *
  *     env:    Environment.
@@ -341,7 +354,8 @@ pl_struct_body( plls_node )
 };
 pl_struct( plls )
 {
-    plbm_t      host; /**< Host allocator. */
+    //     plbm_t      host; /**< Host allocator. */
+    plbm_s      host; /**< Host allocator. */
     plls_node_t head; /**< First node of list. */
     plls_node_t tail; /**< Last node of list. */
     pl_size_t   size; /**< List size, i.e. node count. */
@@ -361,7 +375,8 @@ pl_struct_body( plld_node )
 };
 pl_struct( plld )
 {
-    plbm_t      host; /**< Host allocator. */
+    //     plbm_t      host; /**< Host allocator. */
+    plbm_s      host; /**< Host allocator. */
     plld_node_t head; /**< First node of list. */
     plld_node_t tail; /**< Last node of list. */
     pl_size_t   size; /**< List size, i.e. node count. */
@@ -382,7 +397,8 @@ pl_struct_body( pllu_node )
 };
 pl_struct( pllu )
 {
-    plbm_t      host; /**< Host allocator. */
+    //     plbm_t      host; /**< Host allocator. */
+    plbm_s      host; /**< Host allocator. */
     pllu_node_t head; /**< First node of list. */
     pllu_node_t tail; /**< Last node of list. */
     pl_size_t   size; /**< Total data size. */
@@ -1175,6 +1191,8 @@ pl_bool_t plbm_is_continuous( plbm_t plbm );
 pl_bool_t plbm_is_empty( plbm_t plbm );
 
 
+pl_t plbm_host( plbm_t plbm );
+
 
 /* ------------------------------------------------------------
  * Continuous Memory Allocator:
@@ -1493,12 +1511,13 @@ pl_t plcm_consume( plcm_t plcm, pl_size_t size );
 /**
  * @brief Pop value from the end.
  *
- * @param plcm Plcm handle.
- * @param size Value size.
+ * @param      plcm  Plcm handle.
+ * @param      size  Value size.
+ * @param[out] pop   Popped data (if non-null pointer).
  *
- * @return Popped value.
+ * @return Pointer to popped value.
  */
-pl_t plcm_pop( plcm_t plcm, pl_size_t size );
+pl_t plcm_pop( plcm_t plcm, pl_size_t size, pl_t pop );
 
 
 /**
@@ -1677,12 +1696,13 @@ pl_t plcm_end( plcm_t plcm );
  *
  * Pointer to data is returned, not the data.
  *
- * @param plcm Plcm handle.
- * @param size Tail size.
+ * @param plcm       Plcm handle.
+ * @param size       Tail size.
+ * @param[out] tail  Tail data (if non-null pointer).
  *
  * @return Reference to tail.
  */
-pl_t plcm_tail( plcm_t plcm, pl_size_t size );
+pl_t plcm_tail( plcm_t plcm, pl_size_t size, pl_t tail );
 
 
 /**
@@ -2226,9 +2246,70 @@ plsr_s plsr_range( plsr_s plsr, pl_size_t start, pl_size_t end );
 
 
 /* ------------------------------------------------------------
- * Universal Interface:
+ * Iterator:
  */
 
+/**
+ * @brief Make a Value Range Iterator.
+ *
+ * @param start Start value of iteration.
+ * @param count Number of iterations.
+ * @param step  Step size and direction.
+ *
+ * @return Iterator.
+ */
+plit_s plit_make( pl_pos_t start, pl_pos_t count, pl_pos_t step );
+
+
+/**
+ * @brief Make a Value Range Iterator from range.
+ *
+ * Start value and end value are inclusive, the step is 1 or -1.
+ *
+ * @param start Start value.
+ * @param end   End value.
+ *
+ * @return Iterator.
+ */
+plit_s plit_range( pl_pos_t start, pl_pos_t end );
+
+
+/**
+ * @brief Step iterator and return true when not done.
+ *
+ * Suitable for stepping and checking for do-while loop continuation.
+ *
+ * @param iter Iterator.
+ *
+ * @return True for not-done, false for done.
+ */
+pl_bool_t plit_step( plit_t iter );
+
+
+/**
+ * @brief Return current iteration value.
+ *
+ * @param iter Iterator.
+ *
+ * @return Value.
+ */
+pl_pos_t plit_value( plit_t iter );
+
+
+/**
+ * @brief Return done state.
+ *
+ * @param iter Iterator.
+ *
+ * @return True for done, false for not-done.
+ */
+pl_bool_t plit_done( plit_t iter );
+
+
+
+/* ------------------------------------------------------------
+ * Universal Interface:
+ */
 
 /**
  * @brief Initialize ui structure.
@@ -2499,6 +2580,16 @@ plls_node_t plls_pop( plls_t plls );
 
 
 /**
+ * @brief Clear the list.
+ *
+ * @param plls Plls handle.
+ *
+ * @return None.
+ */
+pl_none plls_clear( plls_t plls );
+
+
+/**
  * @brief Return plls node overhead.
  *
  * @return Overhead in bytes.
@@ -2523,7 +2614,7 @@ pl_t plls_node_data( plls_node_t node );
  *
  * @return Next node (or null).
  */
-plls_node_p plls_node_next( plls_node_p node );
+plls_node_t plls_node_next( plls_node_t node );
 
 
 /**
@@ -2549,6 +2640,16 @@ pl_bool_t plls_node_at_end( plls_node_t node, plls_t plls );
 
 
 /**
+ * @brief Return next grip.
+ *
+ * @param grip Current grip.
+ *
+ * @return Next grip (or null).
+ */
+plls_node_p plls_grip_next( plls_node_p grip );
+
+
+/**
  * @brief Return list host (plbm).
  *
  * @param plls Plls handle.
@@ -2565,7 +2666,17 @@ plbm_t plls_host( plls_t plls );
  *
  * @return Pointer to list head.
  */
-plls_node_p plls_head( plls_t plls );
+plls_node_t plls_head( plls_t plls );
+
+
+/**
+ * @brief Return grip to list head.
+ *
+ * @param plls Plls handle.
+ *
+ * @return Grip to list head.
+ */
+plls_node_p plls_head_grip( plls_t plls );
 
 
 /**
@@ -2575,7 +2686,17 @@ plls_node_p plls_head( plls_t plls );
  *
  * @return Pointer to list tail.
  */
-plls_node_p plls_tail( plls_t plls );
+plls_node_t plls_tail( plls_t plls );
+
+
+/**
+ * @brief Return list tail (grip).
+ *
+ * @param plls Plls handle.
+ *
+ * @return Grip to list tail.
+ */
+plls_node_p plls_tail_grip( plls_t plls );
 
 
 /**
@@ -2586,7 +2707,7 @@ plls_node_p plls_tail( plls_t plls );
  *
  * @return Pointer to node from index (or NULL);
  */
-plls_node_p plls_index( plls_t plls, pl_size_t index );
+plls_node_t plls_index( plls_t plls, pl_size_t index );
 
 
 /**

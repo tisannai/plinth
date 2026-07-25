@@ -452,15 +452,40 @@ defines as:
 
     pl_enum( pl_bool ){ pl_false = 0, pl_true = 1 };
 
-Apart from type definitions, Plinth defines an Universal Interface. It
-is universal in the sense, that it can be used in any context,
-technically. Universal Interface is useful in situations where we have
-to commit to a mechanism, but we don't have much use cases available.
-The interface is captured as struct called `plui`, which includes two
-members: `fun` and `env`. `plui` is initialized with `plui_init`.
-`fun` is called by the interface master to communicate with the
-interface slave. The `env` is used as permanent context for
-communication. The `fun` method is declared as:
+
+Iterating over a range of integers is very common. It is easy to
+introduce off-by-one errors. Plinth defines an Iterator object,
+`plit`. The Iterator object is created with start and end values, plus
+the step used to go from start to end. Step can be positive or
+negative. Iterator can be created by count:
+
+    plit = plit_make( 0, 10, 1 );
+
+where start value is 0, count is 10, and step is 1. Or the same can be
+achieved using a range (inclusive):
+
+    plit = plit_range( 0, 9 );
+
+`plit_step` return true if iteration is not done and false if
+iteration is complete.
+
+    do {
+      ...
+    } while ( !plit_step( &plit ) );
+
+`plit_done` return true is iteration is done and `plit_value` returns
+the current iteration value.
+
+
+Plinth defines an Universal Interface. It is universal in the sense,
+that it can be used in any context, technically. Universal Interface
+is useful in situations where we have to commit to a mechanism, but we
+don't have much use cases available. The interface is captured as
+struct called `plui`, which includes two members: `fun` and `env`.
+`plui` is initialized with `plui_init`. `fun` is called by the
+interface master to communicate with the interface slave. The `env` is
+used as permanent context for communication. The `fun` method is
+declared as:
 
     typedef pl_none ( *plui_fn_t )( pl_t env, pl_t argi, pl_t argo );
 
@@ -499,12 +524,13 @@ the `plam` (`plbm_into_plam`). The supported operations include:
 movement, append, insert, remove, append-to-end, and a number of query
 operations of the list status and content.
 
-Places (locations) in `plls` are handled with a pointer-to-pointer.
-This allows inserting new list items before the current item. Without
-a pointer-to-pointer, it would not be possible to update the list
-linking to the previous node at insertion. In `plld` the place is just
-a pointer to the item, since `plld` can be traveled in both
-directions.
+Places (locations) in `plls` are handled with a pointer-to-pointer
+(known as `grip`). This allows inserting new list items before the
+current item. Without a pointer-to-pointer, it would not be possible
+to update the list linking to the previous node at insertion. In
+`plld` the place is just a pointer to the item, since `plld` can be
+traveled in both directions. Node is used for read-only access for
+`plls`.
 
 The most efficient way of storing a collection, with unknown size, is
 to use an unrolled list (`pllu`). The items are stored in consecutive
@@ -579,6 +605,7 @@ Function listing:
 * `plbm_block_size` : Return block size.
 * `plbm_is_continuous` : Is plbm continuous?
 * `plbm_is_empty` : Is plbm empty?
+* `plbm_host` : ???
 * `plcm_new` : Create plcm in heap (with debt).
 * `plcm_new_ptr` : Create plcm in heap (with debt) for pointers.
 * `plcm_use` : Create plcm to pre-existing allocation (no debt).
@@ -665,6 +692,11 @@ Function listing:
 * `plsr_next_line` : Return next line content, without the terminating newline.
 * `plsr_index` : Return char at index.
 * `plsr_range` : Return range of plsr.
+* `plit_make` : Make a Value Range Iterator.
+* `plit_range` : Make a Value Range Iterator from range.
+* `plit_step` : Step iterator and return true when not done.
+* `plit_value` : Return current iteration value.
+* `plit_done` : Return done state.
 * `plui_init` : Initialize ui structure.
 * `plui_do` : Use Universal Interface.
 * `plar_init` : Initialize array for the data and dimensions.
@@ -687,14 +719,18 @@ Function listing:
 * `plls_store_with_size` : Store data at end of list.
 * `plls_push` : Push data to front of list.
 * `plls_pop` : Pop data from front of list.
+* `plls_clear` : Clear the list.
 * `plls_node_overhead` : Return plls node overhead.
 * `plls_node_data` : Return data from node.
 * `plls_node_next` : Return next node.
 * `plls_node_at_start` : Is node at start of list?
 * `plls_node_at_end` : Is node at end of list?
+* `plls_grip_next` : Return next grip.
 * `plls_host` : Return list host (plbm).
 * `plls_head` : Return list head (node).
+* `plls_head_grip` : Return list head (grip).
 * `plls_tail` : Return list tail (node).
+* `plls_tail_grip` : Return list tail (grip).
 * `plls_index` : Return node from list index.
 * `plls_size` : Return node count of list.
 * `plld_init` : Initialize list to plbm.
