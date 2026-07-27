@@ -16,6 +16,11 @@
 #include "plinth.h"
 
 
+// #define pl_memcopy memmove
+#define pl_memcopy memcpy
+
+
+
 static pl_none pl_node__init( pl_node_t node )
 {
     if ( node ) {
@@ -262,7 +267,7 @@ plsr_s pl_alloc_plsr( plsr_s plsr )
     char* str;
     str = pl_alloc_only( plsr_length( plsr ) + 1 );
     if ( str ) {
-        memcpy( str, plsr_string( plsr ), plsr_length( plsr ) + 1 );
+        pl_memcopy( str, plsr_string( plsr ), plsr_length( plsr ) + 1 );
         return plsr_from_string_and_length( str, plsr_length( plsr ) );
     } else {
         return plsr_null(); /* GCOV_EXCL_LINE */
@@ -581,7 +586,7 @@ pl_t plam_store( plam_t plam, const pl_t data, pl_size_t size )
 {
     pl_t mem;
     mem = plam_get( plam, size );
-    memcpy( mem, data, size );
+    pl_memcopy( mem, data, size );
     return mem;
 }
 
@@ -844,7 +849,7 @@ pl_t plbm_store_with_size( plbm_t plbm, const pl_t data, pl_size_t size )
 {
     pl_t storage;
     storage = plbm_get( plbm );
-    memcpy( storage, data, size );
+    pl_memcopy( storage, data, size );
     return storage;
 }
 
@@ -978,7 +983,7 @@ pl_none plcm_copy_to( plcm_t plcm, plcm_t target, pl_t mem, pl_size_t size )
 {
     plcm_use( target, mem, size );
     plcm_get_ref( target, plcm_used( plcm ) );
-    memcpy( target->data, plcm->data, plcm_used( plcm ) );
+    pl_memcopy( target->data, plcm->data, plcm_used( plcm ) );
 }
 
 
@@ -1042,7 +1047,7 @@ pl_none plcm_resize( plcm_t plcm, pl_size_t size )
 
             new_mem = pl_alloc_memory( new_size );
             if ( new_mem ) {
-                memcpy( new_mem, plcm->data, plcm->size );
+                pl_memcopy( new_mem, plcm->data, plcm->size );
                 plcm->data = new_mem;
                 plcm->size = new_size;
                 plcm->type = PL_AA_HEAP;
@@ -1167,13 +1172,13 @@ pl_t plcm_ref_ptr( plcm_t plcm, pl_pos_t pos )
 
 pl_none plcm_set( plcm_t plcm, pl_pos_t pos, const pl_t data, pl_size_t size )
 {
-    memcpy( plcm_ref( plcm, pos ), data, size );
+    pl_memcopy( plcm_ref( plcm, pos ), data, size );
 }
 
 
 pl_none plcm_set_ptr( plcm_t plcm, pl_pos_t pos, const pl_t ptr )
 {
-    memcpy( plcm_ref( plcm, pos * sizeof( pl_t ) ), &ptr, sizeof( pl_t ) );
+    pl_memcopy( plcm_ref( plcm, pos * sizeof( pl_t ) ), &ptr, sizeof( pl_t ) );
 }
 
 
@@ -1192,7 +1197,7 @@ pl_t plcm_pop( plcm_t plcm, pl_size_t size, pl_t pop )
     plcm->used -= size;
     ret = plcm_end( plcm );
     if ( pop ) {
-        memcpy( pop, ret, size );
+        pl_memcopy( pop, ret, size );
     }
     return ret;
 }
@@ -1310,7 +1315,7 @@ pl_t plcm_tail( plcm_t plcm, pl_size_t size, pl_t tail )
     pl_t ret;
     ret = plcm->data + plcm->used - size;
     if ( tail ) {
-        memcpy( tail, ret, size );
+        pl_memcopy( tail, ret, size );
     }
     return ret;
 }
@@ -1458,7 +1463,7 @@ pl_t plum_store( plum_t plum, const pl_t data, pl_size_t size )
     pl_t mem;
     mem = plum_get( plum, size );
     if ( mem ) {
-        memcpy( mem, data, size );
+        pl_memcopy( mem, data, size );
     }
     return mem;
 }
@@ -1500,7 +1505,7 @@ pl_t plum_update( plum_t plum, pl_t mem, pl_size_t osize, pl_size_t nsize )
                 } else {
                     size = nsize;
                 }
-                memcpy( nmem, mem, size );
+                pl_memcopy( nmem, mem, size );
             }
 
             return nmem;
@@ -1543,7 +1548,7 @@ plcm_t plss_from_plsr( plcm_t plcm, plsr_s plsr )
 plcm_t plss_append( plcm_t plcm, plsr_s str )
 {
     plcm_resize( plcm, plcm->used + str.length + 1 );
-    memcpy( plcm->data + plcm->used, str.string, str.length );
+    pl_memcopy( plcm->data + plcm->used, str.string, str.length );
     plcm->used += str.length;
     plss__terminate( plcm );
     return plcm;
@@ -1587,7 +1592,7 @@ pl_none plss_insert( plcm_t plcm, pl_pos_t pos, pl_t data, pl_size_t size )
 plcm_t plss_set( plcm_t plcm, plsr_s str )
 {
     plcm_resize( plcm, str.length + 1 );
-    memcpy( plcm->data, str.string, str.length );
+    pl_memcopy( plcm->data, str.string, str.length );
     plcm->used = str.length;
     plss__terminate( plcm );
     return plcm;
@@ -2133,7 +2138,7 @@ pl_t plar_get( plar_s plar, pl_size_t index )
 
 pl_none plar_set( plar_s plar, pl_size_t index, pl_size_t count, pl_t data )
 {
-    memcpy( plar.data + ( index * plar.step ), data, count * plar.step );
+    pl_memcopy( plar.data + ( index * plar.step ), data, count * plar.step );
 }
 
 
@@ -2265,7 +2270,7 @@ pl_none plls_append_with_size( plls_t plls, plls_node_p place, const pl_t data, 
         plls->tail = node;
     }
 
-    memcpy( node->data, data, size );
+    pl_memcopy( node->data, data, size );
 }
 
 
@@ -2319,7 +2324,7 @@ pl_none plls_insert_with_size( plls_t plls, plls_node_p place, const pl_t data, 
         plls->tail = node;
     }
 
-    memcpy( node->data, data, size );
+    pl_memcopy( node->data, data, size );
 }
 
 
@@ -2617,7 +2622,7 @@ pl_none plld_append_with_size( plld_t plld, plld_node_t place, const pl_t data, 
         plld->tail = node;
     }
 
-    memcpy( node->data, data, size );
+    pl_memcopy( node->data, data, size );
 }
 
 
@@ -2674,7 +2679,7 @@ pl_none plld_insert_with_size( plld_t plld, plld_node_t place, const pl_t data, 
         plld->tail = node;
     }
 
-    memcpy( node->data, data, size );
+    pl_memcopy( node->data, data, size );
 }
 
 
@@ -2903,7 +2908,7 @@ pl_none pllu_store( pllu_t pllu, const pl_t data, pl_size_t size )
             blop = left;
         }
 
-        memcpy( node->data + node->used, data + done, blop );
+        pl_memcopy( node->data + node->used, data + done, blop );
         node->used += blop;
         pllu->size += blop;
         done += blop;
