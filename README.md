@@ -457,7 +457,7 @@ Iterating over a range of integers is very common. It is easy to
 introduce off-by-one errors. Plinth defines an Iterator object,
 `plit`. The Iterator object is created with start and end values, plus
 the step used to go from start to end. Step can be positive or
-negative. Iterator can be created by count:
+negative. Iterator can be created by using a count:
 
     plit = plit_make( 0, 10, 1 );
 
@@ -473,7 +473,7 @@ iteration is complete.
       ...
     } while ( !plit_step( &plit ) );
 
-`plit_done` return true is iteration is done and `plit_value` returns
+`plit_done` return true if iteration is done and `plit_value` returns
 the current iteration value.
 
 
@@ -529,8 +529,8 @@ Places (locations) in `plls` are handled with a pointer-to-pointer
 current item. Without a pointer-to-pointer, it would not be possible
 to update the list linking to the previous node at insertion. In
 `plld` the place is just a pointer to the item, since `plld` can be
-traveled in both directions. Node is used for read-only access for
-`plls`.
+traveled in both directions. `plls node` is used for read-only access
+for `plls`.
 
 The most efficient way of storing a collection, with unknown size, is
 to use an unrolled list (`pllu`). The items are stored in consecutive

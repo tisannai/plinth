@@ -1136,6 +1136,14 @@ pl_none plcm_put( plcm_t plcm, pl_size_t size )
 }
 
 
+pl_none plcm_put_ptr( plcm_t plcm )
+{
+    if ( sizeof( pl_t ) <= plcm->used ) {
+        plcm->used -= sizeof( pl_t );
+    }
+}
+
+
 pl_pos_t plcm_store( plcm_t plcm, pl_t data, pl_size_t size )
 {
     pl_pos_t ret;
@@ -1187,6 +1195,15 @@ pl_t plcm_consume( plcm_t plcm, pl_size_t size )
     pl_t ret;
     ret = plcm_end( plcm );
     plcm->used += size;
+    return ret;
+}
+
+
+pl_t plcm_release( plcm_t plcm, pl_size_t size )
+{
+    pl_t ret;
+    plcm->used -= size;
+    ret = plcm_end( plcm );
     return ret;
 }
 
@@ -2494,7 +2511,7 @@ pl_bool_t plls_node_at_end( plls_node_t node, plls_t plls )
 plls_node_p plls_grip_next( plls_node_p grip )
 {
     if ( *grip ) {
-        return &( (*grip)->next );
+        return &( ( *grip )->next );
     } else {
         return NULL;
     }
@@ -2749,6 +2766,19 @@ pl_none plld_store( plld_t plld, const pl_t data )
 pl_none plld_store_with_size( plld_t plld, const pl_t data, pl_size_t size )
 {
     plld_append_with_size( plld, plld->tail, data, size );
+}
+
+
+pl_none plld_push( plld_t plld, const pl_t data )
+{
+    plld_insert_with_size(
+        plld, plld->head, data, plbm_block_size( &plld->host ) - plld_node_overhead() );
+}
+
+
+plld_node_t plld_pop( plld_t plld )
+{
+    return plld_remove( plld, plld->head );
 }
 
 

@@ -751,6 +751,13 @@ void test_plcm( void )
     TEST_ASSERT_EQUAL( 128, plcm_used( &plcm ) );
     s2 = plcm_get_ref( &plcm, 256 );
     TEST_ASSERT_EQUAL( 128 + 256, plcm_used( &plcm ) );
+
+    s3 = NULL;
+    pos = plcm_store_ptr( &plcm, s3 );
+    TEST_ASSERT_EQUAL( 128 + 256 + 8, plcm_used( &plcm ) );
+    plcm_put_ptr( &plcm );
+    TEST_ASSERT_EQUAL( 128 + 256, plcm_used( &plcm ) );
+
     plcm_put( &plcm, 256 );
     TEST_ASSERT_EQUAL( 128, plcm_used( &plcm ) );
     plcm_put( &plcm, 128 );
@@ -809,6 +816,9 @@ void test_plcm( void )
     memcpy( s2, s1, strlen( s1 ) + 1 );
     plcm_consume( &plcm, strlen( s1 ) );
     TEST_ASSERT_TRUE( !strcmp( s1, plss_string( &plcm ) ) );
+    TEST_ASSERT_EQUAL( 10, plcm_used( &plcm ) );
+    plcm_release( &plcm, 5 );
+    TEST_ASSERT_EQUAL( 5, plcm_used( &plcm ) );
     plcm_del( &plcm );
 }
 
@@ -1190,7 +1200,6 @@ void test_plls( void )
     plls_s      plls;
     plls_node_t node;
     plls_node_p grip;
-    //     plls_node_t item;
     pl_size_t node_size;
     int       i;
 
@@ -1343,7 +1352,7 @@ void test_plld( void )
 
     plbm_new( &plbm, 128 * node_size, node_size );
     plld = plld_init( &plbm );
-    plld_store( &plld, ss[ 2 ] );
+    plld_push( &plld, ss[ 2 ] );
     plld_store( &plld, ss[ 4 ] );
     node = plld_node_prev( plld_tail( &plld ) );
     plld_append( &plld, node, ss[ 3 ] );
@@ -1404,7 +1413,7 @@ void test_plld( void )
     /* 012
        ^   */
     node = plld_head( &plld );
-    node = plld_remove( &plld, node );
+    node = plld_pop( &plld );
     TEST_ASSERT_EQUAL( 2, plld_size( &plld ) );
     TEST_ASSERT( strcmp( ss[ 1 ], plld_node_data( node ) ) == 0 );
     /* 12

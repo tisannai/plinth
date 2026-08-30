@@ -354,7 +354,6 @@ pl_struct_body( plls_node )
 };
 pl_struct( plls )
 {
-    //     plbm_t      host; /**< Host allocator. */
     plbm_s      host; /**< Host allocator. */
     plls_node_t head; /**< First node of list. */
     plls_node_t tail; /**< Last node of list. */
@@ -375,7 +374,6 @@ pl_struct_body( plld_node )
 };
 pl_struct( plld )
 {
-    //     plbm_t      host; /**< Host allocator. */
     plbm_s      host; /**< Host allocator. */
     plld_node_t head; /**< First node of list. */
     plld_node_t tail; /**< Last node of list. */
@@ -397,7 +395,6 @@ pl_struct_body( pllu_node )
 };
 pl_struct( pllu )
 {
-    //     plbm_t      host; /**< Host allocator. */
     plbm_s      host; /**< Host allocator. */
     pllu_node_t head; /**< First node of list. */
     pllu_node_t tail; /**< Last node of list. */
@@ -1411,6 +1408,18 @@ pl_none plcm_put( plcm_t plcm, pl_size_t size );
 
 
 /**
+ * @brief Put pointer allocation back to plcm.
+ *
+ * User is responsible in making the puts in reserver order.
+ *
+ * @param plcm Plcm handle.
+ *
+ * @return None.
+ */
+pl_none plcm_put_ptr( plcm_t plcm );
+
+
+/**
  * @brief Get allocation from plcm and store value to it.
  *
  * @param plcm Plcm handle.
@@ -1506,6 +1515,17 @@ pl_none plcm_set_ptr( plcm_t plcm, pl_pos_t pos, const pl_t ptr );
  * @return Start address for value.
  */
 pl_t plcm_consume( plcm_t plcm, pl_size_t size );
+
+
+/**
+ * @brief Release allocations and decrease used count.
+ *
+ * @param plcm Plcm handle.
+ * @param size Value size.
+ *
+ * @return Reference to end.
+ */
+pl_t plcm_release( plcm_t plcm, pl_size_t size );
 
 
 /**
@@ -2817,6 +2837,27 @@ pl_none plld_store( plld_t plld, const pl_t data );
  * @return None.
  */
 pl_none plld_store_with_size( plld_t plld, const pl_t data, pl_size_t size );
+
+
+/**
+ * @brief Store data to front of list.
+ *
+ * @param plld Plld handle.
+ * @param data Data to store.
+ *
+ * @return None.
+ */
+pl_none plld_push( plld_t plld, const pl_t data );
+
+
+/**
+ * @brief Remove (pop) node from front of list.
+ *
+ * @param plld  Plld handle.
+ *
+ * @return Removed node (if possible).
+ */
+plld_node_t plld_pop( plld_t plld );
 
 
 /**
