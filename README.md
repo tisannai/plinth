@@ -477,6 +477,49 @@ iteration is complete.
 the current iteration value.
 
 
+Ring buffer index handling is tedious. It is easy to introduce
+off-by-one errors and invalid indices. Plinth defines an Accessor
+object, `plri`, for Ring Buffers. The Accessor object is created with
+buffer size:
+
+    plri = plri_make( 10 );
+
+The actual Ring Buffer is allocated and maintained by `plri` user.
+`plri` only provides the write and read indices to the buffer. When
+user wants to write to the buffer, the write index is stored from:
+
+    wi = plri_write( &plri );
+
+When user wants to read from the buffer, the read index stored from:
+
+    ri = plri_read( &plri );
+
+Write and read indices are used to access the actual Ring Buffer.
+`plri_write` should called only when there is space in the buffer.
+Full status can be checked with `plri_is_full`. If user wants to force
+a write, `plri_write_over` can be called. This will advance both write
+and read indices.
+
+Read should only performed, when there is data in the Ring Buffer.
+Empty status can be checked with `plri_is_empty`.
+
+User can iterate over the content of the Ring Buffer with `plri_step`.
+First the user must create a copy of the Accessor for iteration:
+
+    plri_s iter;
+    iter = plri;
+
+Then iterate over (an non-empty buffer) with:
+
+    do {
+      ...
+    } while ( !plri_step( &iter ) );
+
+The current read index can be examined with:
+
+    plri_index_of_read( &iter );
+
+
 Plinth defines an Universal Interface. It is universal in the sense,
 that it can be used in any context, technically. Universal Interface
 is useful in situations where we have to commit to a mechanism, but we
@@ -629,6 +672,7 @@ Function listing:
 * `plcm_set` : Set value for data.
 * `plcm_set_ptr` : Set pointer value to pointer position.
 * `plcm_consume` : Consume allocation for value (in the allocation end position).
+* `plcm_release` : Release allocations and decrease used count.
 * `plcm_pop` : Pop value from the end.
 * `plcm_pop_ptr` : Pop pointer value from the end.
 * `plcm_remove` : Remove data.
@@ -697,6 +741,17 @@ Function listing:
 * `plit_step` : Step iterator and return true when not done.
 * `plit_value` : Return current iteration value.
 * `plit_done` : Return done state.
+* `plri_make` : Make a Ring Buffer Accessor.
+* `plri_write` : Write index update (if space).
+* `plri_write_over` : Write index update (with overwrite, if full).
+* `plri_read` : Read index update.
+* `plri_step` : Perform read access step.
+* `plri_used` : Return used count.
+* `plri_size` : Return ring buffer size.
+* `plri_index_of_write` : Return current write index.
+* `plri_index_of_read` : Return current read index.
+* `plri_is_empty` : Return true, if buffer is empty.
+* `plri_is_full` : Return true, if buffer is full.
 * `plui_init` : Initialize ui structure.
 * `plui_do` : Use Universal Interface.
 * `plar_init` : Initialize array for the data and dimensions.
@@ -741,6 +796,8 @@ Function listing:
 * `plld_remove` : Remove node from list.
 * `plld_store` : Store data at end of list.
 * `plld_store_with_size` : Store data at end of list.
+* `plld_push` : Store data to front of list.
+* `plld_pop` : Remove (pop) node from front of list.
 * `plld_node_overhead` : Return plld node overhead.
 * `plld_node_data` : Return data from node.
 * `plld_node_next` : Return next node.

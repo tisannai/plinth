@@ -2120,6 +2120,134 @@ pl_bool_t plit_done( plit_t iter )
 
 
 /* ------------------------------------------------------------
+ * Ring buffer indices:
+ */
+
+plri_s plri_make( pl_size_t size )
+{
+    plri_s ring;
+    ring.wi = 0;
+    ring.ri = 0;
+    ring.used = 0;
+    ring.size = size;
+    return ring;
+}
+
+
+pl_pos_t plri_write( plri_t ring )
+{
+    pl_pos_t ret;
+    ret = ring->wi;
+    if ( ring->used < ring->size ) {
+        ring->used++;
+        if ( ring->wi + 1 >= ring->size ) {
+            ring->wi = 0;
+        } else {
+            ring->wi++;
+        }
+    }
+    return ret;
+}
+
+
+pl_pos_t plri_write_over( plri_t ring )
+{
+    pl_pos_t ret;
+    ret = ring->wi;
+    if ( ring->used < ring->size ) {
+        return plri_write( ring );
+    } else {
+        if ( ring->ri == ring->wi ) {
+            if ( ring->wi + 1 >= ring->size ) {
+                ring->wi = 0;
+            } else {
+                ring->wi++;
+            }
+        }
+        if ( ret == ring->ri ) {
+            ring->ri = ring->wi;
+        }
+        return ret;
+    }
+}
+
+
+pl_pos_t plri_read( plri_t ring )
+{
+    pl_pos_t ret;
+    ret = ring->ri;
+    if ( ring->used > 0 ) {
+        if ( ring->ri + 1 >= ring->size ) {
+            ring->ri = 0;
+        } else {
+            ring->ri++;
+        }
+        ring->used--;
+    }
+    return ret;
+}
+
+
+pl_bool_t plri_step( plri_t ring )
+{
+    if ( ring->used > 0 ) {
+        pl_pos_t old_ri;
+        old_ri = ring->ri;
+        if ( ring->ri + 1 >= ring->size ) {
+            ring->ri = 0;
+        } else {
+            ring->ri++;
+        }
+        if ( ring->ri != ring->wi ) {
+            return pl_true;
+        } else {
+            ring->ri = old_ri;
+            return pl_false;
+        }
+    } else {
+        return pl_false;
+    }
+}
+
+
+pl_size_t plri_used( plri_t ring )
+{
+    return ring->used;
+}
+
+
+pl_size_t plri_size( plri_t ring )
+{
+    return ring->size;
+}
+
+
+pl_pos_t plri_index_of_write( plri_t ring )
+{
+    return ring->wi;
+}
+
+
+pl_pos_t plri_index_of_read( plri_t ring )
+{
+    return ring->ri;
+}
+
+
+pl_bool_t plri_is_empty( plri_t ring )
+{
+    return ( ring->used == 0 );
+}
+
+
+pl_bool_t plri_is_full( plri_t ring )
+{
+    return ( ring->used == ring->size );
+}
+
+
+
+/* ------------------------------------------------------------
  * Universal Interface:
  */
 

@@ -308,6 +308,19 @@ pl_struct( plit )
 };
 
 
+/**
+ * Ring buffer indices.
+ *
+ */
+pl_struct( plri )
+{
+    pl_pos_t  wi;   /**< Write index. */
+    pl_pos_t  ri;   /**< Read index. */
+    pl_size_t used; /**< Used count. */
+    pl_size_t size; /**< Buffer size. */
+};
+
+
 
 /**
  * Universal Interface method (function type).
@@ -2324,6 +2337,131 @@ pl_pos_t plit_value( plit_t iter );
  * @return True for done, false for not-done.
  */
 pl_bool_t plit_done( plit_t iter );
+
+
+
+/* ------------------------------------------------------------
+ * Ring buffer indices:
+ */
+
+/**
+ * @brief Make a Ring Buffer Accessor.
+ *
+ * @param size Ring buffer size.
+ *
+ * @return Accessor.
+ */
+plri_s plri_make( pl_size_t size );
+
+
+/**
+ * @brief Write index update (if space).
+ *
+ * Increments used count.
+ *
+ * @param ring Accessor.
+ *
+ * @return Write index to use.
+ */
+pl_pos_t plri_write( plri_t ring );
+
+
+/**
+ * @brief Write index update (with overwrite, if full).
+ *
+ * Increments used count, unless full. If buffer is full, also the
+ * read index is advanced.
+ *
+ * @param ring Accessor.
+ *
+ * @return Write index to use.
+ */
+pl_pos_t plri_write_over( plri_t ring );
+
+
+/**
+ * @brief Read index update.
+ *
+ * Decrements used count, unless empty.
+ *
+ * @param ring Accessor.
+ *
+ * @return Read index to use.
+ */
+pl_pos_t plri_read( plri_t ring );
+
+
+/**
+ * @brief Perform read access step.
+ *
+ * Make a copy of the primary Accessor for iteration, before calling
+ * this function for the first time.
+ *
+ * @param iter Accessor for iteration.
+ *
+ * @return True, unless iteration end.
+ */
+pl_bool_t plri_step( plri_t iter );
+
+
+/**
+ * @brief Return used count.
+ *
+ * @param ring Accessor.
+ *
+ * @return Used count.
+ */
+pl_size_t plri_used( plri_t ring );
+
+
+/**
+ * @brief Return ring buffer size.
+ *
+ * @param ring Accessor.
+ *
+ * @return Buffer size.
+ */
+pl_size_t plri_size( plri_t ring );
+
+
+/**
+ * @brief Return current write index.
+ *
+ * @param ring Accessor.
+ *
+ * @return Write index.
+ */
+pl_pos_t plri_index_of_write( plri_t ring );
+
+
+/**
+ * @brief Return current read index.
+ *
+ * @param ring Accessor.
+ *
+ * @return Read index.
+ */
+pl_pos_t plri_index_of_read( plri_t ring );
+
+
+/**
+ * @brief Return true, if buffer is empty.
+ *
+ * @param ring Accessor.
+ *
+ * @return True for empty.
+ */
+pl_bool_t plri_is_empty( plri_t ring );
+
+
+/**
+ * @brief Return true, if buffer is full.
+ *
+ * @param ring Accessor.
+ *
+ * @return True for full.
+ */
+pl_bool_t plri_is_full( plri_t ring );
 
 
 

@@ -1116,6 +1116,75 @@ void test_plit( void )
 }
 
 
+void test_plri( void )
+{
+    plri_s   p1;
+    plri_s   p2;
+    int      arr[ 3 ];
+    pl_pos_t p;
+
+    p1 = plri_make( 3 );
+
+    TEST_ASSERT_EQUAL( 0, plri_used( &p1 ) );
+    TEST_ASSERT_EQUAL( 3, plri_size( &p1 ) );
+    TEST_ASSERT_EQUAL( pl_true, plri_is_empty( &p1 ) );
+    TEST_ASSERT_EQUAL( pl_false, plri_step( &p1 ) );
+
+    p = plri_write( &p1 );
+    TEST_ASSERT_EQUAL( 0, p );
+    arr[ p ] = 0;
+    TEST_ASSERT_EQUAL( 1, plri_used( &p1 ) );
+    p = plri_read( &p1 );
+    TEST_ASSERT_EQUAL( 0, p );
+    TEST_ASSERT_EQUAL( 0, plri_used( &p1 ) );
+    p = plri_write( &p1 );
+    arr[ p ] = 1;
+    p = plri_write( &p1 );
+    arr[ p ] = 2;
+    p = plri_write( &p1 );
+    arr[ p ] = 3;
+    TEST_ASSERT_EQUAL( 0, p );
+    TEST_ASSERT_EQUAL( 3, arr[ p ] );
+    TEST_ASSERT_EQUAL( 3, plri_used( &p1 ) );
+    TEST_ASSERT_EQUAL( pl_true, plri_is_full( &p1 ) );
+
+    p = plri_write_over( &p1 );
+    TEST_ASSERT_EQUAL( 1, p );
+    arr[ p ] = 0;
+    TEST_ASSERT_EQUAL( 3, plri_used( &p1 ) );
+    p = plri_read( &p1 );
+    TEST_ASSERT_EQUAL( 2, p );
+    TEST_ASSERT_EQUAL( 2, plri_used( &p1 ) );
+    p = plri_write_over( &p1 );
+    arr[ p ] = 1;
+    p = plri_write_over( &p1 );
+    arr[ p ] = 2;
+    p = plri_write_over( &p1 );
+    arr[ p ] = 3;
+    TEST_ASSERT_EQUAL( 1, p );
+    TEST_ASSERT_EQUAL( 3, arr[ p ] );
+    TEST_ASSERT_EQUAL( 3, plri_used( &p1 ) );
+    TEST_ASSERT_EQUAL( pl_true, plri_is_full( &p1 ) );
+    p = plri_write_over( &p1 );
+    arr[ p ] = 1;
+    p = plri_write_over( &p1 );
+    arr[ p ] = 2;
+    p = plri_write_over( &p1 );
+    arr[ p ] = 3;
+    TEST_ASSERT_EQUAL( 1, p );
+    TEST_ASSERT_EQUAL( 3, arr[ p ] );
+    TEST_ASSERT_EQUAL( 3, plri_used( &p1 ) );
+    TEST_ASSERT_EQUAL( pl_true, plri_is_full( &p1 ) );
+
+    p2 = p1;
+    p = plri_index_of_read( &p1 );
+    do {
+        ;
+    } while ( plri_step( &p2 ) );
+    TEST_ASSERT_EQUAL( plri_index_of_write( &p2 ), plri_index_of_read( &p2 ) + 1 );
+}
+
+
 static pl_none ui_echo( pl_t env, pl_t argi, pl_t argo )
 {
     *( (char**)argo ) = (char*)argi;
@@ -1200,8 +1269,8 @@ void test_plls( void )
     plls_s      plls;
     plls_node_t node;
     plls_node_p grip;
-    pl_size_t node_size;
-    int       i;
+    pl_size_t   node_size;
+    int         i;
 
     node_size = sizeof( pl_t ) + plls_node_overhead();
     ss[ 0 ] = "text0";
@@ -1350,9 +1419,33 @@ void test_plld( void )
     ss[ 3 ] = "text3";
     ss[ 4 ] = "text4";
 
+    /* sequence 1 */
     plbm_new( &plbm, 128 * node_size, node_size );
     plld = plld_init( &plbm );
     plld_push( &plld, ss[ 2 ] );
+    plld_store( &plld, ss[ 4 ] );
+    node = plld_node_prev( plld_tail( &plld ) );
+    plld_append( &plld, node, ss[ 3 ] );
+    node = plld_head( &plld );
+    plld_insert( &plld, node, ss[ 0 ] );
+    plld_insert( &plld, node, ss[ 1 ] );
+
+    node = plld_head( &plld );
+    i = 0;
+    while ( i < 5 ) {
+        TEST_ASSERT( strcmp( ss[ i ], plld_node_data( node ) ) == 0 );
+        node = plld_node_next( node );
+        i++;
+    }
+    node = plld_node_next( node );
+    TEST_ASSERT_EQUAL( NULL, node );
+
+
+    /* sequence 2. Same as sequence 1, but with different coverage
+       goals. */
+    plbm_new( &plbm, 128 * node_size, node_size );
+    plld = plld_init( &plbm );
+    plld_append( &plld, NULL, ss[ 2 ] );
     plld_store( &plld, ss[ 4 ] );
     node = plld_node_prev( plld_tail( &plld ) );
     plld_append( &plld, node, ss[ 3 ] );
