@@ -648,7 +648,7 @@ Function listing:
 * `plbm_block_size` : Return block size.
 * `plbm_is_continuous` : Is plbm continuous?
 * `plbm_is_empty` : Is plbm empty?
-* `plbm_host` : ???
+* `plbm_host` : Return plbm allocator host, if any.
 * `plcm_new` : Create plcm in heap (with debt).
 * `plcm_new_ptr` : Create plcm in heap (with debt) for pointers.
 * `plcm_use` : Create plcm to pre-existing allocation (no debt).

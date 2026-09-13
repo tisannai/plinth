@@ -1201,7 +1201,15 @@ pl_bool_t plbm_is_continuous( plbm_t plbm );
 pl_bool_t plbm_is_empty( plbm_t plbm );
 
 
+/**
+ * @brief Return plbm allocator host, if any.
+ *
+ * @param plbm Plbm handle.
+ *
+ * @return Host (or NULL).
+ */
 pl_t plbm_host( plbm_t plbm );
+
 
 
 /* ------------------------------------------------------------
